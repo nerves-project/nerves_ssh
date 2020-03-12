@@ -1,0 +1,2 @@
+defmodule NervesSshTest do
+end
