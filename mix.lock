@@ -1,0 +1,3 @@
+%{
+  "nerves_firmware_ssh2": {:git, "https://github.com/fhunleth/nerves_firmware_ssh2.git", "21809a442baa956615623db3f3da122c4f74d556", []},
+}
