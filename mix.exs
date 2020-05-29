@@ -20,7 +20,7 @@ defmodule NervesSSH.MixProject do
 
   defp deps do
     [
-
+      {:nerves_firmware_ssh2, github: "fhunleth/nerves_firmware_ssh2"}
     ]
   end
 end
