@@ -11,7 +11,14 @@ defmodule NervesSSH.MixProject do
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      docs: docs()
+      description: description(),
+      docs: docs(),
+      package: package(),
+      preferred_cli_env: %{
+        docs: :docs,
+        "hex.publish": :docs,
+        "hex.build": :docs
+      }
     ]
   end
 
@@ -29,12 +36,24 @@ defmodule NervesSSH.MixProject do
     ]
   end
 
+  defp description do
+    "Manage a SSH daemon and subsystems on Nerves devices"
+  end
+
   defp docs do
     [
-      extras: ["README.md"],
+      extras: ["README.md", "CHANGELOG.md"],
       main: "readme",
       source_ref: "v#{@version}",
       source_url: @source_url
     ]
+  end
+
+  defp package do
+    %{
+      files: ["CHANGELOG.md", "lib", "LICENSE", "mix.exs", "priv", "README.md"],
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => @source_url}
+    }
   end
 end
