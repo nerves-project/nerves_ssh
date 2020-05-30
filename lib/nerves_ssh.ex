@@ -1,19 +1,8 @@
 defmodule NervesSSH do
-  @moduledoc """
-  Manages an ssh daemon.
+  @moduledoc File.read!("README.md")
+             |> String.split("<!-- MDOC !-->")
+             |> Enum.fetch!(1)
 
-  Currently piggy-backs off authorized keys defined for `NervesFirmwareSSH`
-  and enables SFTP as a subsystem of SSH as well.
-
-  It also configures an execution point so you can use `ssh` command
-  to execute one-off Elixir code within IEx on the device and get the
-  result back:
-
-  ```sh
-  $ ssh nerves.local "MyModule.hello()"
-  :world
-  ```
-  """
   use GenServer
 
   require Logger
@@ -43,6 +32,7 @@ defmodule NervesSSH do
     defstruct opts: [], port: nil, sshd: nil, sshd_ref: nil
   end
 
+  @doc false
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
