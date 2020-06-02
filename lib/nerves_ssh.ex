@@ -18,6 +18,13 @@ defmodule NervesSSH do
 
   require Logger
 
+  @type opt ::
+          {:authorized_keys, [String.t()]}
+          | {:force, boolean()}
+          | {:port, non_neg_integer()}
+          | {:subsystems, [:ssh.subsystem_spec()]}
+          | {:system_dir, Path.t()}
+
   @default_subsystems [
     :ssh_sftpd.subsystem_spec(cwd: '/'),
     NervesFirmwareSSH2.subsystem_spec(subsystem: 'nerves_firmware_ssh')
@@ -26,95 +33,76 @@ defmodule NervesSSH do
   @default_system_dir "/etc/ssh"
 
   defmodule State do
-    defstruct autostart: true, opts: [], port: nil, sshd: nil, sshd_ref: nil
+    @type t :: %__MODULE__{
+            opts: [NervesSSH.opt()],
+            port: non_neg_integer(),
+            sshd: pid(),
+            sshd_ref: reference()
+          }
+
+    defstruct opts: [], port: nil, sshd: nil, sshd_ref: nil
   end
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  @spec enable :: Supervisor.on_start_child()
-  def enable(opts \\ []) do
-    GenServer.call(__MODULE__, {:enable, opts})
-  end
-
-  @spec disable :: :ok | {:error, any}
-  def disable() do
-    GenServer.call(__MODULE__, :disable)
-  end
-
-  def system_dir(opts \\ []) do
-    cond do
-      system_dir = opts[:system_dir] ->
-        to_charlist(system_dir)
-
-      system_dir = Application.get_env(:nerves_firmware_ssh, :system_dir) ->
-        to_charlist(system_dir)
-
-      File.dir?(@default_system_dir) and host_keys_readable?(@default_system_dir) ->
-        to_charlist(@default_system_dir)
-
-      true ->
-        :code.priv_dir(:nerves_ssh)
-    end
+  @doc """
+  Read the configuration options
+  """
+  @spec configuration :: [opt()]
+  def configuration() do
+    GenServer.call(__MODULE__, :configuration)
   end
 
   @impl true
   def init(opts) do
-    # Prefer supplieed opts, default to application env
-    {autostart, opts} =
+    # Prefer supplied opts, default to application env
+    opts =
       Application.get_all_env(:nerves_ssh)
       |> Keyword.merge(opts)
-      |> Keyword.pop(:autostart, true)
 
-    {:ok, %State{opts: opts, autostart: autostart}, {:continue, :maybe_autostart}}
+    # Make sure we can attempt SSH daemon cleanup if
+    # NervesSSH application gets shutdown
+    Process.flag(:trap_exit, true)
+
+    {:ok, %State{opts: opts}, {:continue, :start_daemon}}
   end
 
   @impl true
-  def handle_call({:enable, opts}, _from, %{opts: initial_opts} = state) do
-    {force?, opts} =
-      Keyword.merge(initial_opts, opts)
-      |> Keyword.pop(:force, false)
-
-    case start_daemon(%{state | opts: opts}, force?) do
-      {:error, _} = err -> {:reply, err, state}
-      new_state -> {:reply, new_state.sshd, new_state}
-    end
-  end
-
-  def handle_call(:disable, _from, state) do
-    case stop_daemon(state) do
-      {:error, _} = err -> {:reply, err, state}
-      new_state -> {:reply, :ok, new_state}
-    end
+  def handle_call(:configuration, _from, state) do
+    {:reply, state.opts, state}
   end
 
   @impl true
-  def handle_continue(:maybe_autostart, %{autostart: true} = state) do
+  def handle_continue(:start_daemon, state) do
     case start_daemon(state) do
       {:error, reason} -> {:stop, reason}
       new_state -> {:noreply, new_state}
     end
   end
 
-  def handle_continue(:maybe_autostart, state) do
-    Logger.info("[NervesSSH] skipped starting sshd")
-    {:noreply, state}
-  end
-
   @impl true
   def handle_info({:DOWN, _ref, :process, _sshd, reason}, state) do
-    Logger.warn("[NervesSSH] sshd crashed: #{inspect(reason)}")
+    Logger.warn("[NervesSSH] sshd #{inspect(state.sshd)} crashed: #{inspect(reason)}")
 
     # force the ssh daemon to start with our options again
     case start_daemon(state, true) do
-      {:error, reason} ->
-        Logger.error("[NervesSSH] failed to restart sshd: #{inspect(reason)}")
-        {:stop, reason}
+      {:error, err} ->
+        Logger.error("[NervesSSH] failed to restart sshd: #{inspect(err)}")
+        {:stop, err, state}
 
       new_state ->
         {:noreply, new_state}
     end
+  end
+
+  @impl true
+  def terminate(reason, state) do
+    Logger.error("[NervesSSH] terminating with reason: #{inspect(reason)}")
+
+    # Try not to leave rogue SSH daemon processes
+    stop_daemon(state)
   end
 
   defp decoded_authorized_keys(opts) do
@@ -142,7 +130,7 @@ defmodule NervesSSH do
     |> Enum.find("", &File.regular?/1)
   end
 
-  def get_port(opts \\ []) do
+  defp get_port(opts) do
     opts[:port] || Application.get_env(:nerves_ssh, :port, 22)
   end
 
@@ -162,6 +150,22 @@ defmodule NervesSSH do
     case File.read(path) do
       {:ok, _} -> true
       _ -> false
+    end
+  end
+
+  defp system_dir(opts) do
+    cond do
+      system_dir = opts[:system_dir] ->
+        to_charlist(system_dir)
+
+      system_dir = Application.get_env(:nerves_firmware_ssh, :system_dir) ->
+        to_charlist(system_dir)
+
+      File.dir?(@default_system_dir) and host_keys_readable?(@default_system_dir) ->
+        to_charlist(@default_system_dir)
+
+      true ->
+        :code.priv_dir(:nerves_ssh)
     end
   end
 
