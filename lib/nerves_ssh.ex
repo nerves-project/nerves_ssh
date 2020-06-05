@@ -21,6 +21,8 @@ defmodule NervesSSH do
 
   @default_system_dir "/etc/ssh"
 
+  @dialyzer [{:no_opaque, start_daemon: 3}]
+
   defmodule State do
     @type t :: %__MODULE__{
             opts: [NervesSSH.opt()],
@@ -67,7 +69,7 @@ defmodule NervesSSH do
   @impl true
   def handle_continue(:start_daemon, state) do
     case start_daemon(state) do
-      {:error, reason} -> {:stop, reason}
+      {:error, reason} -> {:stop, reason, state}
       new_state -> {:noreply, new_state}
     end
   end
@@ -171,6 +173,7 @@ defmodule NervesSSH do
     end
   end
 
+  @spec start_daemon(map(), boolean(), non_neg_integer()) :: map() | {:error, any()}
   defp start_daemon(state, force \\ false, attempt \\ 1)
 
   defp start_daemon(state, _force, attempt) when attempt > 10 do
@@ -214,6 +217,7 @@ defmodule NervesSSH do
     spawn(fn -> exec(cmd, user, peer) end)
   end
 
+  @spec stop_daemon(map(), non_neg_integer()) :: map() | {:error, any()}
   defp stop_daemon(state, attempt \\ 1)
 
   defp stop_daemon(_state, attempt) when attempt > 10 do
