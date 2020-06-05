@@ -8,10 +8,11 @@ defmodule NervesSSH.MixProject do
     [
       app: :nerves_ssh,
       version: @version,
-      elixir: "~> 1.9",
+      elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
+      dialyzer: dialyzer(),
       docs: docs(),
       package: package(),
       preferred_cli_env: %{
@@ -31,8 +32,9 @@ defmodule NervesSSH.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.22", only: :docs},
-      {:nerves_firmware_ssh2, github: "fhunleth/nerves_firmware_ssh2"}
+      {:dialyxir, "~> 1.0.0", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.22", only: :docs, runtime: false},
+      {:nerves_firmware_ssh2, github: "jjcarstens/nerves_firmware_ssh2", branch: "spec-fix"}
     ]
   end
 
@@ -40,12 +42,20 @@ defmodule NervesSSH.MixProject do
     "Manage a SSH daemon and subsystems on Nerves devices"
   end
 
+  defp dialyzer() do
+    [
+      flags: [:race_conditions, :unmatched_returns, :error_handling, :underspecs],
+      ignore_warnings: ".dialyzer_ignore.exs"
+    ]
+  end
+
   defp docs do
     [
       extras: ["README.md", "CHANGELOG.md"],
       main: "readme",
       source_ref: "v#{@version}",
-      source_url: @source_url
+      source_url: @source_url,
+      skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
     ]
   end
 

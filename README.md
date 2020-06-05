@@ -34,8 +34,8 @@ can be recovered.
 
 While this will be started with your application, it is generally a good
 idea to separate connection level processes from your main application via
-`shoehorn`. In the event of your application failure, this still keeps the
-ability to conenct to the device over SSH:
+`shoehorn`. Then the event of your application failure, the separated `nerves_ssh`
+application will continue to work instead of crashing with your app:
 
 ```elixir
 config :shoehorn,
