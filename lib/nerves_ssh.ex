@@ -202,7 +202,8 @@ defmodule NervesSSH do
       {:system_dir, system_dir(opts)},
       {:shell, {Elixir.IEx, :start, [iex_opts]}},
       {:exec, &start_exec/3},
-      {:subsystems, subsystems(opts)}
+      {:subsystems, subsystems(opts)},
+      :inet6
     ]
 
     case {:ssh.daemon(port, options), force?} do
