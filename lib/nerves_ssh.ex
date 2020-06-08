@@ -9,7 +9,6 @@ defmodule NervesSSH do
 
   @type opt ::
           {:authorized_keys, [String.t()]}
-          | {:force, boolean()}
           | {:port, non_neg_integer()}
           | {:subsystems, [:ssh.subsystem_spec()]}
           | {:system_dir, Path.t()}
