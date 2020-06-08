@@ -241,20 +241,23 @@ defmodule NervesSSH do
     # for a socket using our port and close it
     #
     # Based on https://github.com/se-apc/sshd/blob/master/lib/sshd.ex#L383-L384
-    rouge_socket =
-      Port.list()
-      |> Enum.find(
-        &(Port.info(&1)[:name] == 'tcp_inet' and
-            match?({:ok, {{0, 0, 0, 0}, ^port}}, :prim_inet.sockname(&1)))
-      )
-
-    if rouge_socket, do: :gen_tcp.close(rouge_socket)
+    Port.list()
+    |> Enum.filter(&ssh_daemon_socket?(&1, port))
+    |> Enum.each(&:gen_tcp.close(&1))
 
     if is_pid(state.sshd) and Process.alive?(state.sshd) do
       # Failed to stop so let's keep trying
       stop_daemon(state, attempt + 1)
     else
       %{state | sshd: nil, sshd_ref: nil, port: nil}
+    end
+  end
+
+  defp ssh_daemon_socket?(s, port) do
+    case :prim_inet.sockname(s) do
+      {:ok, {{0, 0, 0, 0}, ^port}} -> true
+      {:ok, {{0, 0, 0, 0, 0, 0, 0, 0}, ^port}} -> true
+      _anything_else -> false
     end
   end
 end
