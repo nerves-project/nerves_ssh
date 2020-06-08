@@ -19,13 +19,20 @@ defmodule NervesSSH.MixProject do
         docs: :docs,
         "hex.publish": :docs,
         "hex.build": :docs
-      }
+      },
+      aliases: aliases()
+    ]
+  end
+
+  defp aliases do
+    [
+      test: "test --no-start"
     ]
   end
 
   def application do
     [
-      extra_applications: [:logger, :ssh],
+      extra_applications: [:logger, :public_key, :ssh],
       mod: {NervesSSH.Application, []}
     ]
   end
