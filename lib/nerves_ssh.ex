@@ -24,6 +24,7 @@ defmodule NervesSSH do
   @dialyzer [{:no_opaque, start_daemon: 3}]
 
   defmodule State do
+    @moduledoc false
     @type t :: %__MODULE__{
             opts: [NervesSSH.opt()],
             port: non_neg_integer(),
@@ -35,6 +36,7 @@ defmodule NervesSSH do
   end
 
   @doc false
+  @spec start_link([opt()]) :: GenServer.on_start()
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
