@@ -109,8 +109,17 @@ defmodule NervesSSH.Options do
   @spec sanitize(t()) :: t()
   def sanitize(opts) do
     safe_subsystems = Enum.filter(opts.subsystems, &valid_subsystem?/1)
+    safe_dot_iex_path = validate_dot_iex_path(opts.iex_opts[:dot_iex_path])
+    iex_opts = Keyword.put(opts.iex_opts, :dot_iex_path, safe_dot_iex_path)
 
-    %__MODULE__{opts | subsystems: safe_subsystems}
+    %__MODULE__{opts | subsystems: safe_subsystems, iex_opts: iex_opts}
+  end
+
+  defp validate_dot_iex_path(dot_iex_path) do
+    [dot_iex_path, ".iex.exs", "~/.iex.exs", "/etc/iex.exs"]
+    |> Enum.filter(&is_bitstring/1)
+    |> Enum.map(&Path.expand/1)
+    |> Enum.find("", &File.regular?/1)
   end
 
   defp valid_subsystem?({name, {mod, args}})
