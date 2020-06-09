@@ -65,8 +65,15 @@ defmodule NervesSSH.Options do
     [id_string: :random, inet: :inet6]
   end
 
-  defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
-    do: [{:shell, {Elixir.IEx, :start, [iex_opts]}}]
+  defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}) do
+    # We want to resolve the user specified iex.exs file at session start
+    # so let's do a switcheroo here and make sure to always use
+    # our iex.exs to run the resolve logic
+    iex_path = Path.join(:code.priv_dir(:nerves_ssh), "iex.exs")
+    iex_opts = Keyword.put(iex_opts, :dot_iex_path, iex_path)
+
+    [{:shell, {Elixir.IEx, :start, [iex_opts]}}]
+  end
 
   defp shell_opts(%{shell: :erlang}), do: []
   defp shell_opts(%{shell: :disabled}), do: [shell: :disabled]

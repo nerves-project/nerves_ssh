@@ -8,7 +8,6 @@ defmodule NervesSSH.Application do
   require Logger
 
   @default_system_dir "/etc/ssh"
-  @default_iex_exs_path "/etc/iex.exs"
 
   def start(_type, _args) do
     opts =
@@ -16,7 +15,6 @@ defmodule NervesSSH.Application do
       |> resolve_firmware_ssh_authorized_keys()
       |> resolve_firmware_ssh_system_dir()
       |> resolve_system_dir()
-      # |> resolve_iex_exs_path()
       |> Options.new()
       |> Options.sanitize()
 
@@ -49,7 +47,9 @@ defmodule NervesSSH.Application do
     system_dir = Application.get_env(:nerves_firmware_ssh, :system_dir)
 
     if system_dir and is_nil(opts[:system_dir]) do
-      Logger.warn("ssh system directory found in :nerves_firmware_ssh config. Please move it to :nerves_ssh in your config.exs")
+      Logger.warn(
+        "ssh system directory found in :nerves_firmware_ssh config. Please move it to :nerves_ssh in your config.exs"
+      )
     end
 
     Keyword.put_new(opts, :system_dir, system_dir)
@@ -66,12 +66,6 @@ defmodule NervesSSH.Application do
       true ->
         :code.priv_dir(:nerves_ssh)
     end
-  end
-
-  defp find_iex_exs() do
-    [".iex.exs", "~/.iex.exs", "/etc/iex.exs"]
-    |> Enum.map(&Path.expand/1)
-    |> Enum.find("", &File.regular?/1)
   end
 
   defp host_keys_readable?(path) do
