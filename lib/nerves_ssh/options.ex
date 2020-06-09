@@ -1,5 +1,18 @@
 defmodule NervesSSH.Options do
-  @moduledoc false
+  @moduledoc """
+  Defines option for running the SSH daemon.
+
+  The following fields are available:
+
+  * `:authorized_keys` - a list of SSH authorized key file string
+  * `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
+  * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `nerves_firmware_ssh2`
+  * `:system_dir` - where to find host keys
+  * `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
+  * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
+  * `:iex_opts` - additional options to use when starting up IEx
+  * `:extra_daemon_options` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
+  """
 
   @type language :: :elixir | :erlang | :disabled
 
@@ -9,7 +22,9 @@ defmodule NervesSSH.Options do
           subsystems: [:ssh.subsystem_spec()],
           system_dir: Path.t(),
           shell: language(),
-          exec: language()
+          exec: language(),
+          iex_opts: keyword(),
+          extra_daemon_options: keyword()
         }
 
   defstruct authorized_keys: [],
@@ -21,23 +36,29 @@ defmodule NervesSSH.Options do
             system_dir: "/etc/ssh",
             shell: :elixir,
             exec: :elixir,
-            iex_opts: [dot_iex_path: ""]
+            iex_opts: [dot_iex_path: ""],
+            extra_daemon_options: []
 
+  @doc """
+  Convert keyword options to the NervesSSH.Options
+  """
+  @spec new(keyword()) :: t()
   def new(opts \\ []) do
     struct(__MODULE__, opts)
   end
 
   @doc """
-  Convert NervesSSH.Options to :ssh.daemon_options()
+  Return :ssh.daemon_options()
   """
   @spec daemon_options(t()) :: :ssh.daemon_options()
   def daemon_options(opts) do
-    base_opts() ++
-      subsystem_opts(opts) ++
-      shell_opts(opts) ++
-      exec_opts(opts) ++
-      authentication_daemon_opts(opts) ++
-      key_cb_opts(opts)
+    (base_opts() ++
+       subsystem_opts(opts) ++
+       shell_opts(opts) ++
+       exec_opts(opts) ++
+       authentication_daemon_opts(opts) ++
+       key_cb_opts(opts))
+    |> Keyword.merge(opts.extra_daemon_options)
   end
 
   defp base_opts() do

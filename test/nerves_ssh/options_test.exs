@@ -60,4 +60,24 @@ defmodule NervesSSH.OptionsTest do
                     @ecdsa_public_key_decoded
               ]}
   end
+
+  test "adding daemon options" do
+    opts = Options.new(extra_daemon_options: [my_option: 1])
+    daemon_options = Options.daemon_options(opts)
+
+    assert daemon_options[:my_option] == 1
+  end
+
+  test "overriding daemon options" do
+    # First check that the default is still inet6
+    opts = Options.new()
+    daemon_options = Options.daemon_options(opts)
+    assert daemon_options[:inet] == :inet6
+
+    # Now check that it can be overridden.
+    opts = Options.new(extra_daemon_options: [inet: :inet])
+    daemon_options = Options.daemon_options(opts)
+
+    assert daemon_options[:inet] == :inet
+  end
 end

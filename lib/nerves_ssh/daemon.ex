@@ -83,7 +83,7 @@ defmodule NervesSSH.Daemon do
     stop_daemon(state)
   end
 
-  @spec start_daemon(map(), boolean(), non_neg_integer()) :: map() | {:error, any()}
+  @spec start_daemon(State.t(), boolean(), non_neg_integer()) :: map() | {:error, any()}
   defp start_daemon(state, force \\ false, attempt \\ 1)
 
   defp start_daemon(state, _force, attempt) when attempt > 10 do
