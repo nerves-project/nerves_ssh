@@ -2,7 +2,7 @@
 # Offsetting this lookup to runtime at ssh session start allows you to make changes
 # to your iex.exs and resolve errors without requiring a new firmware.
 #
-# If you change your iex.exs on device that is resovled here, you should be
+# If you change your iex.exs on device that is resolved here, you should be
 # sure to port those changes back to your original iex.exs file that is
 # used when burning the firmware
 
