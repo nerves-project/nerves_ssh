@@ -80,4 +80,16 @@ defmodule NervesSSH.OptionsTest do
 
     assert daemon_options[:inet] == :inet
   end
+
+  test "sanitizing out bad subsystems" do
+    opts = Options.new(subsystems: ["hello"]) |> Options.sanitize()
+    daemon_options = Options.daemon_options(opts)
+    assert daemon_options[:subsystems] == []
+  end
+
+  test "defaults don't need sanitization" do
+    opts = Options.new()
+
+    assert opts == Options.sanitize(opts)
+  end
 end
