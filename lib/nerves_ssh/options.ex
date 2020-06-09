@@ -75,9 +75,9 @@ defmodule NervesSSH.Options do
   defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
 
   defp key_cb_opts(opts) do
-    cb_opts = [authorized_keys: decoded_authorized_keys(opts)]
+    keys = Enum.flat_map(opts.authorized_keys, &:public_key.ssh_decode(&1, :auth_keys))
 
-    [key_cb: {NervesSSH.Keys, cb_opts}]
+    [key_cb: {NervesSSH.Keys, [authorized_keys: keys]}]
   end
 
   defp authentication_daemon_opts(opts) do
@@ -107,9 +107,4 @@ defmodule NervesSSH.Options do
   end
 
   defp valid_subsystem?(_), do: false
-
-  defp decoded_authorized_keys(opts) do
-    opts.authorized_keys
-    |> Enum.flat_map(&:public_key.ssh_decode(&1, :auth_keys))
-  end
 end
