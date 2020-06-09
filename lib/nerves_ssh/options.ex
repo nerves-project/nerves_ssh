@@ -11,7 +11,7 @@ defmodule NervesSSH.Options do
   * `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:iex_opts` - additional options to use when starting up IEx
-  * `:extra_daemon_options` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
+  * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
   """
 
   @type language :: :elixir | :erlang | :disabled
@@ -24,7 +24,7 @@ defmodule NervesSSH.Options do
           shell: language(),
           exec: language(),
           iex_opts: keyword(),
-          extra_daemon_options: keyword()
+          daemon_option_overrides: keyword()
         }
 
   defstruct authorized_keys: [],
@@ -37,7 +37,7 @@ defmodule NervesSSH.Options do
             shell: :elixir,
             exec: :elixir,
             iex_opts: [dot_iex_path: ""],
-            extra_daemon_options: []
+            daemon_option_overrides: []
 
   @doc """
   Convert keyword options to the NervesSSH.Options
@@ -58,7 +58,7 @@ defmodule NervesSSH.Options do
        exec_opts(opts) ++
        authentication_daemon_opts(opts) ++
        key_cb_opts(opts))
-    |> Keyword.merge(opts.extra_daemon_options)
+    |> Keyword.merge(opts.daemon_option_overrides)
   end
 
   defp base_opts() do

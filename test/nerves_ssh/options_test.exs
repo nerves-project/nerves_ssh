@@ -62,7 +62,7 @@ defmodule NervesSSH.OptionsTest do
   end
 
   test "adding daemon options" do
-    opts = Options.new(extra_daemon_options: [my_option: 1])
+    opts = Options.new(daemon_option_overrides: [my_option: 1])
     daemon_options = Options.daemon_options(opts)
 
     assert daemon_options[:my_option] == 1
@@ -75,7 +75,7 @@ defmodule NervesSSH.OptionsTest do
     assert daemon_options[:inet] == :inet6
 
     # Now check that it can be overridden.
-    opts = Options.new(extra_daemon_options: [inet: :inet])
+    opts = Options.new(daemon_option_overrides: [inet: :inet])
     daemon_options = Options.daemon_options(opts)
 
     assert daemon_options[:inet] == :inet

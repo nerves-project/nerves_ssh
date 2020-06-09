@@ -54,4 +54,4 @@ NervesSSH supports a few pieces of configuration via the application config:
   * `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:iex_opts` - additional options to use when starting up IEx
-  * `:extra_daemon_options` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
+  * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
