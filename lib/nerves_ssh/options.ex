@@ -44,6 +44,11 @@ defmodule NervesSSH.Options do
   """
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
+    # if a key is present with nil value, the default will
+    # not be applied in the struct. So remove keys that
+    # have a nil value so defaults get set appropiately
+    opts = Enum.reject(opts, fn {_k, v} -> is_nil(v) end)
+
     struct(__MODULE__, opts)
   end
 
