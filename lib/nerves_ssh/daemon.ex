@@ -136,7 +136,12 @@ defmodule NervesSSH.Daemon do
     # Based on https://github.com/se-apc/sshd/blob/master/lib/sshd.ex#L383-L384
     Port.list()
     |> Enum.filter(&ssh_daemon_socket?(&1, port))
-    |> Enum.each(&:gen_tcp.close(&1))
+    |> Enum.each(&close_daemon_socket/1)
+  end
+
+  defp close_daemon_socket(s) do
+    Logger.info("Forcibly closing daemon socket #{inspect s}")
+    :gen_tcp.close(s)
   end
 
   defp ssh_daemon_socket?(s, port) do
