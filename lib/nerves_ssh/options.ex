@@ -11,6 +11,7 @@ defmodule NervesSSH.Options do
   * `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:iex_opts` - additional options to use when starting up IEx
+  * `:user_passwords` - a list of username/password tuples (stored in the clear!)
   * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
   """
 
@@ -18,6 +19,7 @@ defmodule NervesSSH.Options do
 
   @type t :: %__MODULE__{
           authorized_keys: [String.t()],
+          user_passwords: [{String.t(), String.t()}],
           port: non_neg_integer(),
           subsystems: [:ssh.subsystem_spec()],
           system_dir: Path.t(),
@@ -28,6 +30,7 @@ defmodule NervesSSH.Options do
         }
 
   defstruct authorized_keys: [],
+            user_passwords: [],
             port: 22,
             subsystems: [
               :ssh_sftpd.subsystem_spec(cwd: '/'),
@@ -62,7 +65,8 @@ defmodule NervesSSH.Options do
        shell_opts(opts) ++
        exec_opts(opts) ++
        authentication_daemon_opts(opts) ++
-       key_cb_opts(opts))
+       key_cb_opts(opts) ++
+       user_passwords_opts(opts))
     |> Keyword.merge(opts.daemon_option_overrides)
   end
 
@@ -83,6 +87,15 @@ defmodule NervesSSH.Options do
     keys = Enum.flat_map(opts.authorized_keys, &:public_key.ssh_decode(&1, :auth_keys))
 
     [key_cb: {NervesSSH.Keys, [authorized_keys: keys]}]
+  end
+
+  defp user_passwords_opts(opts) do
+    passes =
+      for {user, password} <- opts.user_passwords do
+        {to_charlist(user), to_charlist(password)}
+      end
+
+    [user_passwords: passes]
   end
 
   defp authentication_daemon_opts(opts) do

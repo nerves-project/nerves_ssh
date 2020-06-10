@@ -5,12 +5,6 @@ defmodule NervesSSH.Daemon do
 
   require Logger
 
-  @type opt ::
-          {:authorized_keys, [String.t()]}
-          | {:port, non_neg_integer()}
-          | {:subsystems, [:ssh.subsystem_spec()]}
-          | {:system_dir, Path.t()}
-
   @dialyzer [{:no_opaque, start_daemon: 3}]
 
   defmodule State do
@@ -26,7 +20,7 @@ defmodule NervesSSH.Daemon do
 
   @doc false
   @spec start_link(Options.t()) :: GenServer.on_start()
-  def start_link(opts) do
+  def start_link(%Options{} = opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
@@ -124,6 +118,17 @@ defmodule NervesSSH.Daemon do
       do: :ssh.stop_daemon(state.sshd),
       else: :ssh.stop_daemon(:any, port, :default)
 
+    close_all_daemon_sockets(port)
+
+    if is_pid(state.sshd) and Process.alive?(state.sshd) do
+      # Failed to stop so let's keep trying
+      stop_daemon(state, attempt + 1)
+    else
+      %{state | sshd: nil, sshd_ref: nil}
+    end
+  end
+
+  defp close_all_daemon_sockets(port) do
     # Apparently there is a bug in erlang ssh where tcp socket can remain
     # open even when the daemon crashes/doesn't start, so we forcibly search
     # for a socket using our port and close it
@@ -132,13 +137,6 @@ defmodule NervesSSH.Daemon do
     Port.list()
     |> Enum.filter(&ssh_daemon_socket?(&1, port))
     |> Enum.each(&:gen_tcp.close(&1))
-
-    if is_pid(state.sshd) and Process.alive?(state.sshd) do
-      # Failed to stop so let's keep trying
-      stop_daemon(state, attempt + 1)
-    else
-      %{state | sshd: nil, sshd_ref: nil}
-    end
   end
 
   defp ssh_daemon_socket?(s, port) do

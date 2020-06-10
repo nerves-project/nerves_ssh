@@ -19,10 +19,10 @@ end
 
 ## Goals
 
-- [X] Support public key authentication
-- [ ] Support username/password authentication
-- [ ] Device generated Server certificate and key
-- [ ] Device generated username/password
+* [X] Support public key authentication
+* [X] Support username/password authentication
+* [ ] Device generated Server certificate and key
+* [ ] Device generated username/password
 
 ## Usage
 
@@ -48,10 +48,29 @@ config :shoehorn,
 NervesSSH supports a few pieces of configuration via the application config:
 
 * `:authorized_keys` - a list of SSH authorized key file string
-  * `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
-  * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `nerves_firmware_ssh2`
-  * `:system_dir` - where to find host keys
-  * `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
-  * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
-  * `:iex_opts` - additional options to use when starting up IEx
-  * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
+* `:user_passwords` - a list of username/password tuples (stored in the
+    clear!)
+* `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
+* `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `nerves_firmware_ssh2`
+* `:system_dir` - where to find host keys
+* `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
+* `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
+* `:iex_opts` - additional options to use when starting up IEx
+* `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
+
+## Authentication
+
+FILL IN...
+
+The SSH console uses public key authentication by default, but it can be
+configured for usernames and passwords via the `:user_passwords` key. This
+has the form `[{"username", "password"}, ...]`. Keep in mind that passwords are
+stored in the clear. This is not recommended for most situations.
+
+```elixir
+config :nerves_ssh,
+  user_passwords: [
+    {"username", "password"}
+  ]
+```
+
