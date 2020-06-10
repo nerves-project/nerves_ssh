@@ -71,7 +71,7 @@ defmodule NervesSSH.Options do
   end
 
   defp base_opts() do
-    [id_string: :random, inet: :inet6]
+    [id_string: :random, inet: :inet6, disconnectfun: fn _reason -> false end]
   end
 
   defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
