@@ -6,7 +6,7 @@ defmodule NervesSSH.Options do
 
   * `:authorized_keys` - a list of SSH authorized key file string
   * `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
-  * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `nerves_firmware_ssh2`
+  * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `ssh_subsystem_fwup`
   * `:system_dir` - where to find host keys
   * `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
@@ -32,11 +32,8 @@ defmodule NervesSSH.Options do
   defstruct authorized_keys: [],
             user_passwords: [],
             port: 22,
-            subsystems: [
-              :ssh_sftpd.subsystem_spec(cwd: '/'),
-              NervesFirmwareSSH2.subsystem_spec()
-            ],
-            system_dir: "/etc/ssh",
+            subsystems: [:ssh_sftpd.subsystem_spec(cwd: '/')],
+            system_dir: "",
             shell: :elixir,
             exec: :elixir,
             iex_opts: [dot_iex_path: ""],

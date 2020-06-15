@@ -140,7 +140,7 @@ defmodule NervesSSH.Daemon do
   end
 
   defp close_daemon_socket(s) do
-    Logger.info("Forcibly closing daemon socket #{inspect s}")
+    Logger.info("Forcibly closing daemon socket #{inspect(s)}")
     :gen_tcp.close(s)
   end
 

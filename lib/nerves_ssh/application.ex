@@ -12,8 +12,9 @@ defmodule NervesSSH.Application do
   def start(_type, _args) do
     opts =
       Application.get_all_env(:nerves_ssh)
-      |> resolve_system_dir()
       |> Options.new()
+      |> resolve_system_dir()
+      |> add_fwup_subsystem()
       |> Options.sanitize()
 
     children = [{NervesSSH.Daemon, opts}]
@@ -22,16 +23,25 @@ defmodule NervesSSH.Application do
     Supervisor.start_link(children, opts)
   end
 
+  defp add_fwup_subsystem(opts) do
+    # TODO: Make it possible to opt out of this
+
+    devpath = Nerves.Runtime.KV.get("nerves_fw_devpath")
+
+    new_subsystems = [SSHSubsystemFwup.subsystem_spec(devpath: devpath) | opts.subsystems]
+    %{opts | subsystems: new_subsystems}
+  end
+
   defp resolve_system_dir(opts) do
     cond do
-      opts[:system_dir] ->
+      File.dir?(opts.system_dir) ->
         opts
 
       File.dir?(@default_system_dir) and host_keys_readable?(@default_system_dir) ->
-        Keyword.put(opts, :system_dir, @default_system_dir)
+        %{opts | system_dir: @default_system_dir}
 
       true ->
-        Keyword.put(opts, :system_dir, :code.priv_dir(:nerves_ssh))
+        %{opts | system_dir: :code.priv_dir(:nerves_ssh)}
     end
   end
 

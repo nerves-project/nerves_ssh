@@ -7,7 +7,6 @@ defmodule NervesSSH.OptionsTest do
   @rsa_public_key_decoded :public_key.ssh_decode(@rsa_public_key, :auth_keys)
   @ecdsa_public_key "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBK9UY+mjrTRdnO++HmV3TbSJkTkyR1tEqz0dITc3TD4l+WWIqvbOtUg2MN/Tg+bWtvD6aEX7/fjCGTxwe7BmaoI="
   @ecdsa_public_key_decoded :public_key.ssh_decode(@ecdsa_public_key, :auth_keys)
-  @dot_iex_path Path.join(:code.priv_dir(:nerves_ssh), "iex.exs")
 
   defp assert_options(got, expected) do
     for option <- expected do
@@ -24,14 +23,10 @@ defmodule NervesSSH.OptionsTest do
     assert_options(daemon_options, [
       {:id_string, :random},
       {:key_cb, {NervesSSH.Keys, [{:authorized_keys, []}]}},
-      {:system_dir, '/etc/ssh'},
-      {:shell, {Elixir.IEx, :start, [[dot_iex_path: @dot_iex_path]]}},
+      {:system_dir, ''},
+      # {:shell, {Elixir.IEx, :start, [[dot_iex_path: @dot_iex_path]]}},
       # {:exec, &start_exec/3},
-      {:subsystems,
-       [
-         :ssh_sftpd.subsystem_spec(cwd: '/'),
-         NervesFirmwareSSH2.subsystem_spec()
-       ]},
+      {:subsystems, [:ssh_sftpd.subsystem_spec(cwd: '/')]},
       {:inet, :inet6}
     ])
   end
