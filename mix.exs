@@ -19,14 +19,7 @@ defmodule NervesSSH.MixProject do
         docs: :docs,
         "hex.publish": :docs,
         "hex.build": :docs
-      },
-      aliases: aliases()
-    ]
-  end
-
-  defp aliases do
-    [
-      test: "test --no-start"
+      }
     ]
   end
 
