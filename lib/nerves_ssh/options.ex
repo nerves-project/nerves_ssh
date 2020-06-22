@@ -36,7 +36,7 @@ defmodule NervesSSH.Options do
             system_dir: "",
             shell: :elixir,
             exec: :elixir,
-            iex_opts: [dot_iex_path: ""],
+            iex_opts: [dot_iex_path: Path.expand(".iex.exs")],
             daemon_option_overrides: []
 
   @doc """
