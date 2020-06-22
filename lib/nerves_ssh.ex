@@ -1,6 +1,6 @@
 defmodule NervesSSH do
   @moduledoc File.read!("README.md")
-             |> String.split("<!-- MDOC !-->")
+             |> String.split("## Usage")
              |> Enum.fetch!(1)
 
   @doc """

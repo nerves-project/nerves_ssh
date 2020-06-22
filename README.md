@@ -26,8 +26,6 @@ end
 
 ## Usage
 
-<!-- MDOC !-->
-
 A wrapper around SSH daemon focused purely on the context of Nerves devices.
 
 It keeps `sshd` under supervision and monitored so that daemon failures can be
