@@ -35,7 +35,8 @@ defmodule NervesSSH.MixProject do
       {:dialyxir, "~> 1.0.0", only: :dev, runtime: false},
       {:ex_doc, "~> 0.22", only: :docs, runtime: false},
       {:ssh_subsystem_fwup, github: "fhunleth/ssh_subsystem_fwup", branch: "main"},
-      {:nerves_runtime, "~> 0.11"}
+      {:nerves_runtime, "~> 0.11"},
+      {:sshex, "~> 2.2.1", only: [:dev, :test]}
     ]
   end
 

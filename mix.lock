@@ -8,7 +8,8 @@
   "makeup_elixir": {:hex, :makeup_elixir, "0.14.1", "4f0e96847c63c17841d42c08107405a005a2680eb9c7ccadfd757bd31dabccfb", [:mix], [{:makeup, "~> 1.0", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm", "f2438b1a80eaec9ede832b5c41cd4f373b38fd7aa33e3b22d9db79e640cbde11"},
   "nerves_runtime": {:hex, :nerves_runtime, "0.11.2", "7606c559d6eb33736af813394d8b4e67e3ede155808c6dc4b2ac0aea2c1b66fb", [:make, :mix], [{:elixir_make, "~> 0.6", [hex: :elixir_make, repo: "hexpm", optional: false]}, {:system_registry, "~> 0.8.0", [hex: :system_registry, repo: "hexpm", optional: false]}, {:uboot_env, "~> 0.1.1 or ~> 0.2.0", [hex: :uboot_env, repo: "hexpm", optional: false]}], "hexpm", "094446be5a1d51d3ec0c26e9f5905ab42731397e8715404a5e5e095b4f3125b6"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.6.0", "32111b3bf39137144abd7ba1cce0914533b2d16ef35e8abc5ec8be6122944263", [:mix], [], "hexpm", "27eac315a94909d4dc68bc07a4a83e06c8379237c5ea528a9acff4ca1c873c52"},
-  "ssh_subsystem_fwup": {:git, "https://github.com/fhunleth/ssh_subsystem_fwup.git", "977ea8f9050cde72523fdbb1456286da6f5008d5", [branch: "main"]},
+  "ssh_subsystem_fwup": {:git, "https://github.com/fhunleth/ssh_subsystem_fwup.git", "e5a351e1b074bf66eb86eebfd567e927a1fcb0f1", [branch: "main"]},
+  "sshex": {:hex, :sshex, "2.2.1", "e1270b8345ea2a66a11c2bb7aed22c93e3bc7bc813486f4ffd0a980e4a898160", [:mix], [], "hexpm", "45b2caa5011dc850e70a2d77e3b62678a3e8bcb903eab6f3e7afb2ea897b13db"},
   "system_registry": {:hex, :system_registry, "0.8.2", "df791dc276652fcfb53be4dab823e05f8269b96ac57c26f86a67838dbc0eefe7", [:mix], [], "hexpm", "f7acdede22c73ab0b3735eead7f2095efb2a7a6198366564205274db2ca2a8f8"},
   "uboot_env": {:hex, :uboot_env, "0.2.0", "003a8e7688b59a072fc0a849963622f45bb9efedce9af6ae3a52ba7c6a06149a", [:mix], [], "hexpm", "891d30fbd4795c242418f2430460f52e2c050bbf3e31c64f22ab87b6f10287ee"},
 }
