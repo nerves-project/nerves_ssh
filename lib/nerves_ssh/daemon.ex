@@ -5,6 +5,10 @@ defmodule NervesSSH.Daemon do
 
   require Logger
 
+  # In the very rare event that the Erlang ssh daemon crashes, give the
+  # system some time to recover.
+  @cool_off_time 500
+
   @dialyzer [{:no_opaque, start_daemon: 3}]
 
   defmodule State do
@@ -43,9 +47,17 @@ defmodule NervesSSH.Daemon do
 
   @impl true
   def handle_continue(:start_daemon, state) do
-    case start_daemon(state) do
-      {:error, reason} -> {:stop, reason, state}
-      new_state -> {:noreply, new_state}
+    opts = state.opts
+    daemon_options = Options.daemon_options(opts)
+
+    case :ssh.daemon(opts.port, daemon_options) do
+      {:ok, sshd} ->
+        {:noreply, %{state | sshd: sshd, sshd_ref: Process.monitor(sshd)}}
+
+      error ->
+        Logger.error("[NervesSSH] :ssd.daemon failed: #{inspect(error)}")
+
+        {:stop, {:ssh_daemon_error, error}, state}
     end
   end
 
@@ -56,17 +68,13 @@ defmodule NervesSSH.Daemon do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, _sshd, reason}, state) do
-    Logger.warn("[NervesSSH] sshd #{inspect(state.sshd)} crashed: #{inspect(reason)}")
+    Logger.warn(
+      "[NervesSSH] sshd #{inspect(state.sshd)} crashed: #{inspect(reason)}. Restarting after delay."
+    )
 
-    # force the ssh daemon to start with our options again
-    case start_daemon(state, true) do
-      {:error, err} ->
-        Logger.error("[NervesSSH] failed to restart sshd: #{inspect(err)}")
-        {:stop, err, state}
+    Process.sleep(@cool_off_time)
 
-      new_state ->
-        {:noreply, new_state}
-    end
+    {:stop, {:ssh_crashed, reason}, state}
   end
 
   @impl true
@@ -75,31 +83,6 @@ defmodule NervesSSH.Daemon do
 
     # Try not to leave rogue SSH daemon processes
     stop_daemon(state)
-  end
-
-  @spec start_daemon(State.t(), boolean(), non_neg_integer()) :: map() | {:error, any()}
-  defp start_daemon(state, force \\ false, attempt \\ 1)
-
-  defp start_daemon(state, _force, attempt) when attempt > 10 do
-    {:error, "failed to start ssh daemon on #{state.opts[:port]} after 10 attempts"}
-  end
-
-  defp start_daemon(%{opts: opts} = state, force?, attempt) do
-    daemon_options = Options.daemon_options(opts)
-
-    case {:ssh.daemon(opts.port, daemon_options), force?} do
-      {{:ok, sshd}, _} ->
-        %{state | sshd: sshd, sshd_ref: Process.monitor(sshd)}
-
-      {{:error, :eaddrinuse}, _force = true} ->
-        with %{} = state <- stop_daemon(state), do: start_daemon(state, force?, attempt + 1)
-
-      {{:error, :eaddrinuse}, _no_force} ->
-        {:error, {:eaddrinuse, state.sshd}}
-
-      {err, _} ->
-        err
-    end
   end
 
   @spec stop_daemon(map(), non_neg_integer()) :: map() | {:error, any()}

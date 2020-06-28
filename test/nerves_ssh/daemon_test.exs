@@ -31,9 +31,9 @@ defmodule NervesSSH.DaemonTest do
     state = :sys.get_state(NervesSSH.Daemon)
     assert {:ok, "2", 0} == ssh_run("1 + 1")
 
-    # Simulate sshd failure and wait for restart
+    # Simulate sshd failure. restart
     Process.exit(state.sshd, :kill)
-    :timer.sleep(10)
+    :timer.sleep(800)
 
     # Test recovery
     new_state = :sys.get_state(NervesSSH.Daemon)
