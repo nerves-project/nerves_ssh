@@ -32,6 +32,16 @@ defmodule NervesSSH.Daemon do
     GenServer.call(__MODULE__, :configuration)
   end
 
+  @doc """
+  Return information on the running ssh daemon.
+
+  See [ssh.daemon_info/1](http://erlang.org/doc/man/ssh.html#daemon_info-1).
+  """
+  @spec info() :: {:ok, [:ssh.daemon_info_tuple()]} | {:error, :bad_daemon_ref}
+  def info() do
+    GenServer.call(__MODULE__, :info)
+  end
+
   @impl true
   def init(opts) do
     # Make sure we can attempt SSH daemon cleanup if
@@ -52,6 +62,10 @@ defmodule NervesSSH.Daemon do
   @impl true
   def handle_call(:configuration, _from, state) do
     {:reply, state.opts, state}
+  end
+
+  def handle_call(:info, _from, state) do
+    {:reply, :ssh.daemon_info(state.sshd), state}
   end
 
   @impl true
