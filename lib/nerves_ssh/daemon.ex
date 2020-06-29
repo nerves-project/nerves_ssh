@@ -5,11 +5,11 @@ defmodule NervesSSH.Daemon do
 
   require Logger
 
-  # In the very rare event that the Erlang ssh daemon crashes, give the
-  # system some time to recover.
+  # In the very rare event that the Erlang ssh daemon crashes, give the system
+  # some time to recover.
   @cool_off_time 500
 
-  @dialyzer [{:no_opaque, start_daemon: 3}]
+  @dialyzer [{:no_opaque, handle_continue: 2}]
 
   defmodule State do
     @moduledoc false
@@ -50,12 +50,19 @@ defmodule NervesSSH.Daemon do
     opts = state.opts
     daemon_options = Options.daemon_options(opts)
 
+    # Handle the case where we're restarted and terminate/2 wasn't called to
+    # stop the ssh daemon. This should be very rare, but it happens since we
+    # can't link to the ssh daemon and take it down when we go down (it already
+    # has a link). This is harmless if the server isn't running.
+    _ = :ssh.stop_daemon(:any, opts.port, :default)
+
     case :ssh.daemon(opts.port, daemon_options) do
       {:ok, sshd} ->
         {:noreply, %{state | sshd: sshd, sshd_ref: Process.monitor(sshd)}}
 
       error ->
         Logger.error("[NervesSSH] :ssd.daemon failed: #{inspect(error)}")
+        Process.sleep(@cool_off_time)
 
         {:stop, {:ssh_daemon_error, error}, state}
     end
@@ -81,57 +88,9 @@ defmodule NervesSSH.Daemon do
   def terminate(reason, state) do
     Logger.error("[NervesSSH] terminating with reason: #{inspect(reason)}")
 
-    # Try not to leave rogue SSH daemon processes
-    stop_daemon(state)
-  end
-
-  @spec stop_daemon(map(), non_neg_integer()) :: map() | {:error, any()}
-  defp stop_daemon(state, attempt \\ 1)
-
-  defp stop_daemon(_state, attempt) when attempt > 10 do
-    {:error, "failed to stop ssh daemon after 10 attempts"}
-  end
-
-  defp stop_daemon(state, attempt) do
-    port = state.opts.port
-
-    if state.sshd_ref, do: Process.demonitor(state.sshd_ref)
-
-    if is_pid(state.sshd),
-      do: :ssh.stop_daemon(state.sshd),
-      else: :ssh.stop_daemon(:any, port, :default)
-
-    close_all_daemon_sockets(port)
-
-    if is_pid(state.sshd) and Process.alive?(state.sshd) do
-      # Failed to stop so let's keep trying
-      stop_daemon(state, attempt + 1)
-    else
-      %{state | sshd: nil, sshd_ref: nil}
-    end
-  end
-
-  defp close_all_daemon_sockets(port) do
-    # Apparently there is a bug in erlang ssh where tcp socket can remain
-    # open even when the daemon crashes/doesn't start, so we forcibly search
-    # for a socket using our port and close it
-    #
-    # Based on https://github.com/se-apc/sshd/blob/master/lib/sshd.ex#L383-L384
-    Port.list()
-    |> Enum.filter(&ssh_daemon_socket?(&1, port))
-    |> Enum.each(&close_daemon_socket/1)
-  end
-
-  defp close_daemon_socket(s) do
-    Logger.info("Forcibly closing daemon socket #{inspect(s)}")
-    :gen_tcp.close(s)
-  end
-
-  defp ssh_daemon_socket?(s, port) do
-    case :prim_inet.sockname(s) do
-      {:ok, {{0, 0, 0, 0}, ^port}} -> true
-      {:ok, {{0, 0, 0, 0, 0, 0, 0, 0}, ^port}} -> true
-      _anything_else -> false
-    end
+    # NOTE: we can't link to the SSH daemon process, so we must manually stop
+    # it if we terminate. terminate/2 is not guaranteed to be called, so it's
+    # possible that this is not called.
+    :ssh.stop_daemon(state.sshd)
   end
 end
