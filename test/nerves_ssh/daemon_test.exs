@@ -46,10 +46,11 @@ defmodule NervesSSH.DaemonTest do
     assert {:ok, ":running_at_start?", 0} == ssh_run(":running_at_start?")
 
     assert :ok == Application.stop(:nerves_ssh)
-    Process.sleep(500)
+    Process.sleep(250)
     assert {:error, :econnrefused} == ssh_run(":really_stopped?")
 
     assert :ok == Application.start(:nerves_ssh)
+    Process.sleep(250)
     assert {:ok, ":started_again?", 0} == ssh_run(":started_again?")
   end
 
@@ -75,6 +76,7 @@ defmodule NervesSSH.DaemonTest do
 
     # Start the real server up. It should kill our old one.
     assert :ok == Application.start(:nerves_ssh)
+    Process.sleep(250)
     assert {:ok, ":started_again?", 0} == ssh_run(":started_again?")
   end
 end
