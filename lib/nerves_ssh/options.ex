@@ -68,7 +68,89 @@ defmodule NervesSSH.Options do
   end
 
   defp base_opts() do
-    [id_string: :random, inet: :inet6, disconnectfun: fn _reason -> false end]
+    [
+      inet: :inet6,
+      disconnectfun: fn _reason -> false end
+    ] ++ hardening_opts(otp_version())
+  end
+
+  defp otp_version() do
+    release = System.otp_release()
+
+    case Integer.parse(release) do
+      {major, _rest} -> major
+      :error -> :unknown
+    end
+  end
+
+  defp hardening_opts(otp_version) when otp_version >= 23 do
+    [
+      id_string: :random,
+      modify_algorithms: [
+        rm: [
+          kex: [
+            :"diffie-hellman-group-exchange-sha256",
+            :"ecdh-sha2-nistp384",
+            :"ecdh-sha2-nistp521",
+            :"ecdh-sha2-nistp256"
+          ],
+          cipher: [
+            client2server: [
+              :"aes256-cbc",
+              :"aes192-cbc",
+              :"aes128-cbc",
+              :"3des-cbc"
+            ],
+            server2client: [
+              :"aes256-cbc",
+              :"aes192-cbc",
+              :"aes128-cbc",
+              :"3des-cbc"
+            ]
+          ],
+          mac: [
+            client2server: [
+              :"hmac-sha2-256",
+              :"hmac-sha1-etm@openssh.com",
+              :"hmac-sha1"
+            ],
+            server2client: [
+              :"hmac-sha2-256",
+              :"hmac-sha1-etm@openssh.com",
+              :"hmac-sha1"
+            ]
+          ]
+        ]
+      ]
+    ]
+  end
+
+  defp hardening_opts(_other_version) do
+    [
+      id_string: :random,
+      modify_algorithms: [
+        rm: [
+          cipher: [
+            client2server: [
+              :"3des-cbc"
+            ],
+            server2client: [
+              :"3des-cbc"
+            ]
+          ],
+          mac: [
+            client2server: [
+              :"hmac-sha1-etm@openssh.com",
+              :"hmac-sha1"
+            ],
+            server2client: [
+              :"hmac-sha1-etm@openssh.com",
+              :"hmac-sha1"
+            ]
+          ]
+        ]
+      ]
+    ]
   end
 
   defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
