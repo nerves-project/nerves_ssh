@@ -105,23 +105,6 @@ jobs:
       - run: mix compile
       - run: mix test
 
-  build_elixir_1_7_otp_21:
-    docker:
-      - image: erlang:21.3
-        environment:
-          ELIXIR_VERSION: 1.7.4-otp-21
-          LC_ALL: C.UTF-8
-          SUDO: true
-    <<: *defaults
-    steps:
-      - checkout
-      - <<: *install_system_deps
-      - <<: *install_elixir
-      - <<: *install_hex_rebar
-      - run: mix deps.get
-      - run: mix compile
-      - run: mix test
-
 workflows:
   version: 2
   build_test:
@@ -133,6 +116,4 @@ workflows:
       - build_elixir_1_9_otp_22:
           context: org-global
       - build_elixir_1_8_otp_21:
-          context: org-global
-      - build_elixir_1_7_otp_21:
           context: org-global

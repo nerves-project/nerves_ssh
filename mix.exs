@@ -8,7 +8,7 @@ defmodule NervesSSH.MixProject do
     [
       app: :nerves_ssh,
       version: @version,
-      elixir: "~> 1.7",
+      elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
