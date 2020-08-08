@@ -41,7 +41,7 @@ defmodule NervesSSH.Daemon do
 
   See [ssh.daemon_info/1](http://erlang.org/doc/man/ssh.html#daemon_info-1).
   """
-  @spec info() :: {:ok, [:ssh.daemon_info_tuple()]} | {:error, :bad_daemon_ref}
+  @spec info() :: {:ok, keyword()} | {:error, :bad_daemon_ref}
   def info() do
     GenServer.call(__MODULE__, :info)
   end
