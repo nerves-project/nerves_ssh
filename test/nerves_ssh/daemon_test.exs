@@ -6,7 +6,7 @@ defmodule NervesSSH.DaemonTest do
     password: 'password',
     user_dir: Path.absname("test/fixtures/good_user_dir")
   ]
-  @key_login [user_dir: Path.absname("test/fixtures/good_user_dir")]
+  @key_login [user: 'anything_but_root', user_dir: Path.absname("test/fixtures/good_user_dir")]
 
   defp ssh_run(cmd, options \\ @username_login) do
     ssh_options =
