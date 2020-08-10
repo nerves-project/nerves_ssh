@@ -18,14 +18,17 @@ defmodule NervesSSH.DaemonTest do
     end
   end
 
+  @tag :has_good_sshd_exec
   test "private key login" do
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
   end
 
+  @tag :has_good_sshd_exec
   test "username/password login" do
     assert {:ok, "2", 0} == ssh_run("1 + 1", @username_login)
   end
 
+  @tag :has_good_sshd_exec
   test "can recover from sshd failure" do
     # Test we can send SSH command
     state = :sys.get_state(NervesSSH.Daemon)
@@ -42,6 +45,7 @@ defmodule NervesSSH.DaemonTest do
     assert {:ok, "4", 0} == ssh_run("2 + 2")
   end
 
+  @tag :has_good_sshd_exec
   test "stopping and starting the application" do
     assert {:ok, ":running_at_start?", 0} == ssh_run(":running_at_start?")
 
@@ -54,6 +58,7 @@ defmodule NervesSSH.DaemonTest do
     assert {:ok, ":started_again?", 0} == ssh_run(":started_again?")
   end
 
+  @tag :has_good_sshd_exec
   test "starting the application after terminate wasn't called" do
     assert :ok == Application.stop(:nerves_ssh)
 
