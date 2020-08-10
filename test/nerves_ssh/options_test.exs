@@ -62,7 +62,7 @@ defmodule NervesSSH.OptionsTest do
               ]}
   end
 
-  test "username/passwords are charlisted" do
+  test "username/passwords are turned into charlists" do
     opts = Options.new(user_passwords: [{"alice", "password"}, {"bob", "1234"}])
     daemon_options = Options.daemon_options(opts)
 
