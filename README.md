@@ -1,13 +1,24 @@
 # NervesSSH
 
-[![CircleCI](https://circleci.com/gh/nerves-project/nerves_ssh.svg?style=svg)](https://circleci.com/gh/nerves-project/nerves_ssh)
+[![CircleCI](https://circleci.com/gh/nerves-project/nerves_ssh/tree/main.svg?style=svg)](https://circleci.com/gh/nerves-project/nerves_ssh/tree/main)
 [![Hex version](https://img.shields.io/hexpm/v/nerves_ssh.svg "Hex version")](https://hex.pm/packages/nerves_ssh)
 
-Manage a SSH daemon and subsystems on Nerves devices.
+Manage an SSH daemon and its subsystems on Nerves devices
 
-## Installation
+## Usage
 
-To use, add the dependency to your `mix.exs`:
+This library wraps Erlang/OTP's [SSH
+daemon](http://erlang.org/doc/man/ssh.html#daemon-1) to make it easier to use
+reliably with Nerves devices.
+
+Most importantly, it makes it possible to segment failures in other OTP
+applications from terminating the daemon and it recovers from rare scenarios
+where the daemon terminates without automatically restarting.
+
+If you're using [`:nerves_pack`](https://hex.pm/packages/nerves_pack) v0.4.0 or
+later, you don't need to do anything except, perhaps, modify the `:nerves_ssh`'s
+configuration in your `config.exs`. If you are not using `:nerves_pack`, add
+`:nerves_ssh` to your `mix` dependency list:
 
 ```elixir
 def deps do
@@ -17,29 +28,16 @@ def deps do
 end
 ```
 
-## Goals
-
-* [X] Support public key authentication
-* [X] Support username/password authentication
-* [ ] Device generated Server certificate and key
-* [ ] Device generated username/password
-
-## Usage
-
-A wrapper around SSH daemon focused purely on the context of Nerves devices.
-
-It keeps `sshd` under supervision and monitored so that daemon failures can be
-recovered.
-
-While this will be started with your application, it is generally a good idea to
-separate connection level processes from your main application via `shoehorn`.
-Then the event of your application failure, the separated `nerves_ssh`
-application will continue to work instead of crashing with your app:
+And then include it in `:shoehorn`'s `:init` list:
 
 ```elixir
 config :shoehorn,
   init: [:nerves_runtime, :vintage_net, :nerves_ssh]
 ```
+
+`:nerves_ssh` will work if you do not add it to the `:init` list. However, if
+your main OTP application stops, OTP may stop `:nerves_ssh`, and that would make
+your device inaccessible via SSH.
 
 ## Configuration
 
@@ -58,7 +56,42 @@ NervesSSH supports a few pieces of configuration via the application config:
 
 ## Authentication
 
-FILL IN...
+It's possible to set up a number of authentication strategies with the Erlang
+SSH daemon. Currently, only simple public key and username/password
+authentication setups are supported by `:nerves_ssh`. Both of them work fine for
+getting started. As needs become more sophisticated, you can pass options to
+`:daemon_option_overrides`.
+
+### Public key authentication
+
+Public ssh keys can be included in the `config.exs` so that matching clients can
+connect. These come from files like your `~/.ssh/id_rsa.pub` or
+`~/.ssh/id_ecdsa.pub` that were created when you created your `ssh` keys. If you
+haven't done this, the following
+[article](https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/)
+may be helpful. Here's an example:
+
+```elixir
+config :nerves_ssh,
+  authorized_keys: [
+    "ssh-rsa
+AAAAB3NzaC1yc2EAAAADAQABAAAAgQDBCdMwNo0xOE86il0DB2Tq4RCv07XvnV7W1uQBlOOE0ZZVjxmTIOiu8XcSLy0mHj11qX5pQH3Th6Jmyqdj",
+    "ssh-rsa
+AAAAB3NzaC1yc2EAAAADAQABAAACAQCaf37TM8GfNKcoDjoewa6021zln4GvmOiXqW6SRpF61uNWZXurPte1u8frrJX1P/hGxCL7YN3cV6eZqRiF"
+  ]
+```
+
+Here's another way that may work well for you that avoids needing to commit your
+keys:
+
+```elixir
+config :nerves_ssh,
+  authorized_keys: [
+    File.read!(Path.join(System.user_home!, ".ssh/id_rsa.pub"))
+  ]
+```
+
+### Username/password authentication
 
 The SSH console uses public key authentication by default, but it can be
 configured for usernames and passwords via the `:user_passwords` key. This
@@ -72,3 +105,9 @@ config :nerves_ssh,
   ]
 ```
 
+## Goals
+
+* [X] Support public key authentication
+* [X] Support username/password authentication
+* [ ] Device generated server certificate and key
+* [ ] Device generated username/password
