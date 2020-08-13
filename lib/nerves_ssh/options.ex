@@ -15,6 +15,8 @@ defmodule NervesSSH.Options do
   * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
   """
 
+  @default_system_dir "/etc/ssh"
+
   @otp System.otp_release() |> Integer.parse() |> elem(0)
 
   @type language :: :elixir | :erlang | :disabled
@@ -52,6 +54,18 @@ defmodule NervesSSH.Options do
     opts = Enum.reject(opts, fn {_k, v} -> is_nil(v) end)
 
     struct(__MODULE__, opts)
+  end
+
+  @doc """
+  Create a new NervesSSH.Options and fill in defaults
+  """
+  @spec with_defaults(keyword()) :: t()
+  def with_defaults(opts \\ []) do
+    opts
+    |> new()
+    |> resolve_system_dir()
+    |> add_fwup_subsystem()
+    |> sanitize()
   end
 
   @doc """
@@ -227,4 +241,39 @@ defmodule NervesSSH.Options do
   end
 
   defp valid_subsystem?(_), do: false
+
+  defp add_fwup_subsystem(opts) do
+    # TODO: Make it possible to opt out of this
+
+    devpath = Nerves.Runtime.KV.get("nerves_fw_devpath")
+
+    new_subsystems = [SSHSubsystemFwup.subsystem_spec(devpath: devpath) | opts.subsystems]
+    %{opts | subsystems: new_subsystems}
+  end
+
+  defp resolve_system_dir(opts) do
+    cond do
+      File.dir?(opts.system_dir) ->
+        opts
+
+      File.dir?(@default_system_dir) and host_keys_readable?(@default_system_dir) ->
+        %{opts | system_dir: @default_system_dir}
+
+      true ->
+        %{opts | system_dir: :code.priv_dir(:nerves_ssh)}
+    end
+  end
+
+  defp host_keys_readable?(path) do
+    ["ssh_host_rsa_key", "ssh_host_dsa_key", "ssh_host_ecdsa_key"]
+    |> Enum.map(fn name -> Path.join(path, name) end)
+    |> Enum.any?(&readable?/1)
+  end
+
+  defp readable?(path) do
+    case File.read(path) do
+      {:ok, _} -> true
+      _ -> false
+    end
+  end
 end
