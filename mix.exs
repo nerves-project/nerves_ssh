@@ -18,7 +18,8 @@ defmodule NervesSSH.MixProject do
       preferred_cli_env: %{
         docs: :docs,
         "hex.publish": :docs,
-        "hex.build": :docs
+        "hex.build": :docs,
+        credo: :test
       }
     ]
   end
@@ -36,7 +37,8 @@ defmodule NervesSSH.MixProject do
       {:ex_doc, "~> 0.22", only: :docs, runtime: false},
       {:ssh_subsystem_fwup, "~> 0.5"},
       {:nerves_runtime, "~> 0.11"},
-      {:sshex, "~> 2.2.1", only: [:dev, :test]}
+      {:sshex, "~> 2.2.1", only: [:dev, :test]},
+      {:credo, "~> 1.2", only: :test, runtime: false}
     ]
   end
 

@@ -15,6 +15,8 @@ defmodule NervesSSH.Options do
   * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
   """
 
+  alias Nerves.Runtime.KV
+
   @default_system_dir "/etc/ssh"
 
   @otp System.otp_release() |> Integer.parse() |> elem(0)
@@ -243,9 +245,7 @@ defmodule NervesSSH.Options do
   defp valid_subsystem?(_), do: false
 
   defp add_fwup_subsystem(opts) do
-    # TODO: Make it possible to opt out of this
-
-    devpath = Nerves.Runtime.KV.get("nerves_fw_devpath")
+    devpath = KV.get("nerves_fw_devpath")
 
     new_subsystems = [SSHSubsystemFwup.subsystem_spec(devpath: devpath) | opts.subsystems]
     %{opts | subsystems: new_subsystems}
