@@ -138,6 +138,27 @@ config :nerves_ssh,
   ]
 ```
 
+## Upgrade from `NervesFirmwareSSH`
+
+If you are migrating from `:nerves_firmware_ssh`, or updating to `:nerves_pack >= 0.4.0`,
+you will need to make a few changes to your existing project.
+
+1. Change all `:nerves_firmware_ssh` config values to `:nerves_ssh`. A command like this
+  would probably do the trick:
+    ```sh
+    $ grep -RIl nerves_firmware_ssh config/ | xargs sed -i 's/nerves_firmware_ssh/nerves_ssh/g'
+    ```
+2. Compile your new firmware that includes `:nerves_ssh` (or updated `:nerves_pack`)
+    * **NOTE** Compiling your new firmware for the first time will generate a warning
+    about the old `upload.sh` script still being around. You can ignore that **this one time**
+    because you will need it for uploading to an existing device still using port 8989.
+3. Upload your new firmware with `:nerves_ssh` using the **_old_** `upload.sh` script (or
+  whatever other method you have been using for OTA firmware updates)
+4. After the new firmware with `:nerves_ssh` is on the device, then you'll need to
+  generate the new `upload.sh` script with `mix firmware.gen.script`, or see
+  [SSHSubsystemFwup](https://hexdocs.pm/ssh_subsystem_fwup/readme.html) for other
+  supported options
+
 ## Goals
 
 * [X] Support public key authentication
