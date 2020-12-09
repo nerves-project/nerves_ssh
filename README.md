@@ -80,12 +80,15 @@ NervesSSH supports the following configuration items:
 * `:user_passwords` - a list of username/password tuples (stored in the
     clear!)
 * `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
-* `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `ssh_subsystem_fwup`
+* `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start.
+  Defaults to SFTP and `ssh_subsystem_fwup`
 * `:system_dir` - where to find host keys
 * `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
-* `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
+* `:exec` - the language to use for commands sent over ssh (`:elixir`,
+  `:erlang`, or `:disabled`). Defaults to `:elixir`.
 * `:iex_opts` - additional options to use when starting up IEx
-* `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
+* `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`.
+  These take precedence and are unchecked.
 
 ## Authentication
 
@@ -127,8 +130,8 @@ config :nerves_ssh,
 ### Username/password authentication
 
 The SSH console uses public key authentication by default, but it can be
-configured for usernames and passwords via the `:user_passwords` key. This
-has the form `[{"username", "password"}, ...]`. Keep in mind that passwords are
+configured for usernames and passwords via the `:user_passwords` key. This has
+the form `[{"username", "password"}, ...]`. Keep in mind that passwords are
 stored in the clear. This is not recommended for most situations.
 
 ```elixir
@@ -140,24 +143,29 @@ config :nerves_ssh,
 
 ## Upgrade from `NervesFirmwareSSH`
 
-If you are migrating from `:nerves_firmware_ssh`, or updating to `:nerves_pack >= 0.4.0`,
-you will need to make a few changes to your existing project.
+If you are migrating from `:nerves_firmware_ssh`, or updating to `:nerves_pack
+>= 0.4.0`, you will need to make a few changes to your existing project.
 
-1. Change all `:nerves_firmware_ssh` config values to `:nerves_ssh`. A command like this
-  would probably do the trick:
+1. Change all `:nerves_firmware_ssh` config values to `:nerves_ssh`. A command
+   like this would probably do the trick:
+
     ```sh
-    $ grep -RIl nerves_firmware_ssh config/ | xargs sed -i 's/nerves_firmware_ssh/nerves_ssh/g'
+    grep -RIl nerves_firmware_ssh config/ | xargs sed -i 's/nerves_firmware_ssh/nerves_ssh/g'
     ```
-2. Compile your new firmware that includes `:nerves_ssh` (or updated `:nerves_pack`)
-    * **NOTE** Compiling your new firmware for the first time will generate a warning
-    about the old `upload.sh` script still being around. You can ignore that **this one time**
-    because you will need it for uploading to an existing device still using port 8989.
-3. Upload your new firmware with `:nerves_ssh` using the **_old_** `upload.sh` script (or
-  whatever other method you have been using for OTA firmware updates)
-4. After the new firmware with `:nerves_ssh` is on the device, then you'll need to
-  generate the new `upload.sh` script with `mix firmware.gen.script`, or see
-  [SSHSubsystemFwup](https://hexdocs.pm/ssh_subsystem_fwup/readme.html) for other
-  supported options
+
+2. Compile your new firmware that includes `:nerves_ssh` (or updated
+   `:nerves_pack`)
+    * **NOTE** Compiling your new firmware for the first time will generate a
+      warning about the old `upload.sh` script still being around. You can
+      ignore that **this one time** because you will need it for uploading to an
+      existing device still using port 8989.
+3. Upload your new firmware with `:nerves_ssh` using the **_old_** `upload.sh`
+   script (or whatever other method you have been using for OTA firmware
+   updates)
+4. After the new firmware with `:nerves_ssh` is on the device, then you'll need
+   to generate the new `upload.sh` script with `mix firmware.gen.script`, or see
+   [SSHSubsystemFwup](https://hexdocs.pm/ssh_subsystem_fwup/readme.html) for
+   other supported options
 
 ## Goals
 
