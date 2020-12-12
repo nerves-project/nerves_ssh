@@ -189,11 +189,10 @@ defmodule NervesSSH.Options do
     def run_exec(m, f, a) do
       case apply(m, f, a) do
         {:ok, output} ->
-          IO.puts(output)
+          IO.binwrite(output)
 
         {:error, output} ->
-          IO.puts(output)
-          exit({:shutdown, 1})
+          IO.binwrite(output)
       end
     end
   end
