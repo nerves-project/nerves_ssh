@@ -83,9 +83,10 @@ NervesSSH supports the following configuration items:
 * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start.
   Defaults to SFTP and `ssh_subsystem_fwup`
 * `:system_dir` - where to find host keys
-* `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
+* `:shell` - the language of the shell (`:elixir`, `:erlang`, `:lfe`,  or
+  `:disabled`). Defaults to `:elixir`.
 * `:exec` - the language to use for commands sent over ssh (`:elixir`,
-  `:erlang`, or `:disabled`). Defaults to `:elixir`.
+  `:erlang`, `lfe`, or `:disabled`). Defaults to `:elixir`.
 * `:iex_opts` - additional options to use when starting up IEx
 * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`.
   These take precedence and are unchecked.

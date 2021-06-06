@@ -14,4 +14,16 @@ defmodule NervesSSH.Exec do
     kind, value ->
       {:error, "** (#{kind}) #{inspect(value)}"}
   end
+
+  @doc """
+  Run one LFE command coming over ssh
+  """
+  @spec run_lfe(charlist()) :: {:ok, binary()} | {:error, binary()}
+  def run_lfe(cmd) do
+    {value, _} = apply(:lfe_shell, :run_string, [cmd])
+    {:ok, apply(:lfe_io, :prettyprint1, [value, 30])}
+  catch
+    kind, value ->
+      {:error, "** (#{kind}) #{inspect(value)}"}
+  end
 end

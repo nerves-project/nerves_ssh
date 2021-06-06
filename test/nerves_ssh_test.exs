@@ -115,4 +115,10 @@ defmodule NervesSshTest do
     Process.sleep(25)
     assert {:ok, ":started_again?", 0} == ssh_run(":started_again?")
   end
+
+  @tag :has_good_sshd_exec
+  test "lfe exec works" do
+    start_supervised!({NervesSSH, Map.put(@nerves_ssh_config, :exec, :lfe)})
+    assert {:ok, "2", 0} == ssh_run("(+ 1 1)", @username_login)
+  end
 end
