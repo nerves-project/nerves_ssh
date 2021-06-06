@@ -167,13 +167,13 @@ defmodule NervesSSH.Options do
   defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
     do: [{:shell, {Elixir.IEx, :start, [iex_opts]}}]
 
-  defp shell_opts(%{shell: :erlang}), do: []
+  defp shell_opts(%{shell: :erlang}), do: [{:shell, {:shell, :start, []}}]
   defp shell_opts(%{shell: :lfe}), do: [{:shell, {:lfe_shell, :start, []}}]
   defp shell_opts(%{shell: :disabled}), do: [shell: :disabled]
 
   if @otp >= 23 do
     defp exec_opts(%{exec: :elixir}), do: [exec: {:direct, &NervesSSH.Exec.run_elixir/1}]
-    defp exec_opts(%{exec: :erlang}), do: []
+    defp exec_opts(%{exec: :erlang}), do: [exec: {:direct, &NervesSSH.Exec.run_erlang/1}]
     defp exec_opts(%{exec: :lfe}), do: [exec: {:direct, &NervesSSH.Exec.run_lfe/1}]
     defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
   else
@@ -181,8 +181,8 @@ defmodule NervesSSH.Options do
     defp exec_opts(%{exec: :elixir}),
       do: [exec: fn cmd -> spawn(__MODULE__, :run_exec, [NervesSSH.Exec, :run_elixir, [cmd]]) end]
 
+    # Don't support :lfe and :erlang the old way
     defp exec_opts(%{exec: :erlang}), do: []
-    # Don't support :lfe the old way
     defp exec_opts(%{exec: :lfe}), do: []
     defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
 
