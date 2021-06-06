@@ -8,7 +8,7 @@ defmodule NervesSSH.Options do
   * `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
   * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `ssh_subsystem_fwup`
   * `:system_dir` - where to find host keys
-  * `:shell` - the language of the shell (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
+  * `:shell` - the language of the shell (`:elixir`, `:erlang`, `:lfe` or `:disabled`). Defaults to `:elixir`.
   * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:iex_opts` - additional options to use when starting up IEx
   * `:user_passwords` - a list of username/password tuples (stored in the clear!)
@@ -21,7 +21,7 @@ defmodule NervesSSH.Options do
 
   @otp System.otp_release() |> Integer.parse() |> elem(0)
 
-  @type language :: :elixir | :erlang | :disabled
+  @type language :: :elixir | :erlang | :lfe | :disabled
 
   @type t :: %__MODULE__{
           authorized_keys: [String.t()],
@@ -168,16 +168,22 @@ defmodule NervesSSH.Options do
     do: [{:shell, {Elixir.IEx, :start, [iex_opts]}}]
 
   defp shell_opts(%{shell: :erlang}), do: []
+  defp shell_opts(%{shell: :lfe}), do: [{:shell, {:lfe_shell, :start, []}}]
   defp shell_opts(%{shell: :disabled}), do: [shell: :disabled]
 
   if @otp >= 23 do
     defp exec_opts(%{exec: :elixir}), do: [exec: {:direct, &NervesSSH.Exec.run_elixir/1}]
+    defp exec_opts(%{exec: :erlang}), do: []
+    defp exec_opts(%{exec: :lfe}), do: [exec: {:direct, &NervesSSH.Exec.run_lfe/1}]
     defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
   else
     # Old way of passing exec options
     defp exec_opts(%{exec: :elixir}),
       do: [exec: fn cmd -> spawn(__MODULE__, :run_exec, [NervesSSH.Exec, :run_elixir, [cmd]]) end]
 
+    defp exec_opts(%{exec: :erlang}), do: []
+    # Don't support :lfe the old way
+    defp exec_opts(%{exec: :lfe}), do: []
     defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
 
     def run_exec(m, f, a) do
