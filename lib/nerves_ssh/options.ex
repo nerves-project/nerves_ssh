@@ -193,7 +193,7 @@ defmodule NervesSSH.Options do
   end
 
   defp key_cb_opts(opts) do
-    keys = Enum.flat_map(opts.authorized_keys, &:public_key.ssh_decode(&1, :auth_keys))
+    keys = Enum.flat_map(opts.authorized_keys, &decode_key/1)
 
     [key_cb: {NervesSSH.Keys, [authorized_keys: keys]}]
   end
@@ -275,5 +275,13 @@ defmodule NervesSSH.Options do
       {:ok, _} -> true
       _ -> false
     end
+  end
+
+  # :public_key.ssh_decode/2 was deprecated in OTP 24 and will be removed in OTP 26.
+  # :ssh_file.decode/2 was introduced in OTP 24
+  if @otp >= 24 do
+    defp decode_key(key), do: :ssh_file.decode(key, :auth_keys)
+  else
+    defp decode_key(key), do: :public_key.ssh_decode(key, :auth_keys)
   end
 end
