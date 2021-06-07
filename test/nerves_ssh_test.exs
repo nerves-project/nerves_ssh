@@ -21,6 +21,9 @@ defmodule NervesSshTest do
       [ip: '127.0.0.1', port: 4022, user_interaction: false, silently_accept_hosts: true]
       |> Keyword.merge(options)
 
+    # Short sleep to make sure server is up an running
+    Process.sleep(100)
+
     with {:ok, conn} <- SSHEx.connect(ssh_options) do
       SSHEx.run(conn, cmd)
     end
