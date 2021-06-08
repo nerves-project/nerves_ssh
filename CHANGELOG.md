@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.2
+
+* Improvements
+  * Fix a deprecation warning on OTP 24.0.1 and later
+  * Add support for LFE shells. LFE must be a dependency of your project for
+    this to work.
+
 ## v0.2.1
 
 * Improvements
