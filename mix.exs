@@ -40,7 +40,7 @@ defmodule NervesSSH.MixProject do
       # lfe doesn't have a release posted to hex.pm yet so we can't list it as
       # an optional dependency on hex. Making it a dev/test only dependency
       # gets around this.
-      {:lfe, github: "lfe/lfe", tag: "2.0", only: [:dev, :test], compile: "make", optional: true},
+      {:lfe, github: "lfe/lfe", tag: "2.0.1", only: [:dev, :test], compile: "make", optional: true},
       {:sshex, "~> 2.2.1", only: [:dev, :test]},
       {:credo, "~> 1.2", only: :test, runtime: false}
     ]
