@@ -16,7 +16,7 @@ install_system_deps: &install_system_deps
   run:
     name: Install system dependencies
     command: |
-        apk add --no-cache build-base linux-headers libmnl-dev libnl3-dev git
+        apk add --no-cache build-base linux-headers libmnl-dev libnl3-dev git openssh
 
 jobs:
   build_elixir_1_12_otp_24:

@@ -130,4 +130,64 @@ defmodule NervesSshTest do
     start_supervised!({NervesSSH, Map.put(@nerves_ssh_config, :exec, :lfe)})
     assert {:ok, "2", 0} == ssh_run("(+ 1 1)", @username_login)
   end
+
+  @tag :has_good_sshd_exec
+  test "SCP download" do
+    start_supervised!({NervesSSH, @nerves_ssh_config})
+    assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
+
+    filename = "test_download.txt"
+    download_path = "/tmp/#{filename}"
+
+    File.chmod!("test/fixtures/good_user_dir/id_rsa", 0o600)
+    File.rm_rf!(filename)
+    File.rm_rf!(download_path)
+    File.write!(download_path, "asdf")
+
+    {_output, 0} =
+      System.cmd("scp", [
+        "-o",
+        "UserKnownHostsFile /dev/null",
+        "-o",
+        "StrictHostKeyChecking no",
+        "-i",
+        "test/fixtures/good_user_dir/id_rsa",
+        "-P",
+        "#{@port}",
+        "test_user@localhost:#{download_path}",
+        "#{filename}"
+      ])
+
+    assert File.read!(filename) == "asdf"
+  end
+
+  @tag :has_good_sshd_exec
+  test "SCP upload" do
+    start_supervised!({NervesSSH, @nerves_ssh_config})
+    assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
+
+    filename = "test_upload.txt"
+    upload_path = "/tmp/#{filename}"
+
+    File.chmod!("test/fixtures/good_user_dir/id_rsa", 0o600)
+    File.rm_rf!(filename)
+    File.rm_rf!(upload_path)
+    File.write!(filename, "asdf")
+
+    {_output, 0} =
+      System.cmd("scp", [
+        "-o",
+        "UserKnownHostsFile /dev/null",
+        "-o",
+        "StrictHostKeyChecking no",
+        "-i",
+        "test/fixtures/good_user_dir/id_rsa",
+        "-P",
+        "#{@port}",
+        filename,
+        "test_user@localhost:#{upload_path}"
+      ])
+
+    assert File.read!(upload_path) == "asdf"
+  end
 end
