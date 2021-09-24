@@ -12,7 +12,7 @@ defmodule NervesSSH.Exec do
     {:ok, inspect(result)}
   catch
     kind, value ->
-      {:error, "** (#{kind}) #{inspect(value)}"}
+      {:error, Exception.format(kind, value, __STACKTRACE__)}
   end
 
   @doc """
@@ -24,6 +24,6 @@ defmodule NervesSSH.Exec do
     {:ok, apply(:lfe_io, :prettyprint1, [value, 30])}
   catch
     kind, value ->
-      {:error, "** (#{kind}) #{inspect(value)}"}
+      {:error, Exception.format(kind, value, __STACKTRACE__)}
   end
 end
