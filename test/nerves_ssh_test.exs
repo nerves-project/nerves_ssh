@@ -1,12 +1,14 @@
 defmodule NervesSshTest do
   use ExUnit.Case, async: false
 
+  @port 4022
+
   @nerves_ssh_config NervesSSH.Options.with_defaults(
                        authorized_keys: [File.read!("test/fixtures/good_user_dir/id_rsa.pub")],
                        user_passwords: [
                          {"test_user", "password"}
                        ],
-                       port: 4022
+                       port: @port
                      )
 
   @username_login [
@@ -18,7 +20,7 @@ defmodule NervesSshTest do
 
   defp ssh_run(cmd, options \\ @username_login) do
     ssh_options =
-      [ip: '127.0.0.1', port: 4022, user_interaction: false, silently_accept_hosts: true]
+      [ip: '127.0.0.1', port: @port, user_interaction: false, silently_accept_hosts: true]
       |> Keyword.merge(options)
 
     # Short sleep to make sure server is up an running
@@ -68,7 +70,7 @@ defmodule NervesSshTest do
 
     Application.put_all_env([
       {:nerves_ssh,
-       port: 4022,
+       port: @port,
        authorized_keys: [
          File.read!("test/fixtures/good_user_dir/id_rsa.pub")
        ]}
@@ -100,7 +102,7 @@ defmodule NervesSshTest do
         NervesSSH,
         NervesSSH.Options.new(
           user_passwords: [{"test_user", "not_the_right_password"}],
-          port: 4022,
+          port: @port,
           system_dir: :code.priv_dir(:nerves_ssh)
         )
       )
