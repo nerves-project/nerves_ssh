@@ -157,12 +157,12 @@ defmodule NervesSSH.SCP do
   end
 
   # dest_path can be a folder or a full pathname
-  def combine_paths(dest_path, file_name) do
-    if Path.basename(dest_path) == Path.basename(file_name) do
-      {:ok, dest_path}
+  defp combine_paths(dest_path, source_path) do
+    if File.dir?(dest_path) do
+      dest_filename = Path.basename(source_path)
+      {:ok, Path.join(dest_path, dest_filename)}
     else
-      File.mkdir_p!(dest_path)
-      {:ok, Path.join(dest_path, file_name)}
+      {:ok, dest_path}
     end
   end
 end
