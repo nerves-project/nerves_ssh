@@ -1,15 +1,5 @@
 defmodule NervesSshTest do
-  use ExUnit.Case, async: false
-
-  @port 4022
-
-  @nerves_ssh_config NervesSSH.Options.with_defaults(
-                       authorized_keys: [File.read!("test/fixtures/good_user_dir/id_rsa.pub")],
-                       user_passwords: [
-                         {"test_user", "password"}
-                       ],
-                       port: @port
-                     )
+  use ExUnit.Case, async: true
 
   @username_login [
     user: 'test_user',
@@ -17,35 +7,61 @@ defmodule NervesSshTest do
     user_dir: Path.absname("test/fixtures/good_user_dir")
   ]
   @key_login [user: 'anything_but_root', user_dir: Path.absname("test/fixtures/good_user_dir")]
+  @base_ssh_port 4022
+
+  defp nerves_ssh_config() do
+    NervesSSH.Options.with_defaults(
+      authorized_keys: [File.read!("test/fixtures/good_user_dir/id_rsa.pub")],
+      user_passwords: [
+        {"test_user", "password"}
+      ],
+      port: ssh_port()
+    )
+  end
 
   defp ssh_run(cmd, options \\ @username_login) do
     ssh_options =
-      [ip: '127.0.0.1', port: @port, user_interaction: false, silently_accept_hosts: true]
+      [
+        ip: '127.0.0.1',
+        port: ssh_port(),
+        user_interaction: false,
+        silently_accept_hosts: true
+      ]
       |> Keyword.merge(options)
 
     # Short sleep to make sure server is up an running
-    Process.sleep(100)
+    Process.sleep(200)
 
     with {:ok, conn} <- SSHEx.connect(ssh_options) do
       SSHEx.run(conn, cmd)
     end
   end
 
+  defp ssh_port() do
+    Process.get(:ssh_port)
+  end
+
+  setup context do
+    # Use unique ssh port numbers for each test to support async: true
+    Process.put(:ssh_port, @base_ssh_port + context.line)
+    :ok
+  end
+
   @tag :has_good_sshd_exec
   test "private key login" do
-    start_supervised!({NervesSSH, @nerves_ssh_config})
+    start_supervised!({NervesSSH, nerves_ssh_config()})
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
   end
 
   @tag :has_good_sshd_exec
   test "username/password login" do
-    start_supervised!({NervesSSH, @nerves_ssh_config})
+    start_supervised!({NervesSSH, nerves_ssh_config()})
     assert {:ok, "2", 0} == ssh_run("1 + 1", @username_login)
   end
 
   @tag :has_good_sshd_exec
   test "can recover from sshd failure" do
-    start_supervised!({NervesSSH, @nerves_ssh_config})
+    start_supervised!({NervesSSH, nerves_ssh_config()})
 
     # Test we can send SSH command
     state = :sys.get_state(NervesSSH)
@@ -53,7 +69,7 @@ defmodule NervesSshTest do
 
     # Simulate sshd failure. restart
     Process.exit(state.sshd, :kill)
-    :timer.sleep(800)
+    Process.sleep(800)
 
     # Test recovery
     new_state = :sys.get_state(NervesSSH)
@@ -70,7 +86,7 @@ defmodule NervesSshTest do
 
     Application.put_all_env([
       {:nerves_ssh,
-       port: @port,
+       port: ssh_port(),
        authorized_keys: [
          File.read!("test/fixtures/good_user_dir/id_rsa.pub")
        ]}
@@ -102,7 +118,7 @@ defmodule NervesSshTest do
         NervesSSH,
         NervesSSH.Options.new(
           user_passwords: [{"test_user", "not_the_right_password"}],
-          port: @port,
+          port: ssh_port(),
           system_dir: :code.priv_dir(:nerves_ssh)
         )
       )
@@ -113,27 +129,27 @@ defmodule NervesSshTest do
              ssh_run(":started_again?")
 
     # Start the real server up. It should kill our old one.
-    start_supervised!({NervesSSH, @nerves_ssh_config})
+    start_supervised!({NervesSSH, nerves_ssh_config()})
     Process.sleep(25)
     assert {:ok, ":started_again?", 0} == ssh_run(":started_again?")
   end
 
   @tag :has_good_sshd_exec
   test "erlang exec works" do
-    options = %{@nerves_ssh_config | shell: :erlang, exec: :erlang}
+    options = %{nerves_ssh_config() | shell: :erlang, exec: :erlang}
     start_supervised!({NervesSSH, options})
     assert {:ok, "3", 0} == ssh_run("1 + 2.", @username_login)
   end
 
   @tag :has_good_sshd_exec
   test "lfe exec works" do
-    start_supervised!({NervesSSH, Map.put(@nerves_ssh_config, :exec, :lfe)})
+    start_supervised!({NervesSSH, Map.put(nerves_ssh_config(), :exec, :lfe)})
     assert {:ok, "2", 0} == ssh_run("(+ 1 1)", @username_login)
   end
 
   @tag :has_good_sshd_exec
   test "SCP download" do
-    start_supervised!({NervesSSH, @nerves_ssh_config})
+    start_supervised!({NervesSSH, nerves_ssh_config()})
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
 
     filename = "test_download.txt"
@@ -153,7 +169,7 @@ defmodule NervesSshTest do
         "-i",
         "test/fixtures/good_user_dir/id_rsa",
         "-P",
-        "#{@port}",
+        "#{ssh_port()}",
         "test_user@localhost:#{download_path}",
         "#{filename}"
       ])
@@ -163,7 +179,7 @@ defmodule NervesSshTest do
 
   @tag :has_good_sshd_exec
   test "SCP upload" do
-    start_supervised!({NervesSSH, @nerves_ssh_config})
+    start_supervised!({NervesSSH, nerves_ssh_config()})
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
 
     filename = "test_upload.txt"
@@ -183,7 +199,7 @@ defmodule NervesSshTest do
         "-i",
         "test/fixtures/good_user_dir/id_rsa",
         "-P",
-        "#{@port}",
+        "#{ssh_port()}",
         filename,
         "test_user@localhost:#{upload_path}"
       ])
