@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.3
+
+* New features
+  * Initial support for using `scp` to copy files. Not all `scp` features work,
+    but uploading and downloading individual files does. Thanks to Connor Rigby
+    and Binary Noggin for this feature.
+
 ## v0.2.2
 
 * Improvements
