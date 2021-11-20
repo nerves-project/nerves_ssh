@@ -32,8 +32,8 @@ defmodule NervesSSH.Exec do
   """
   @spec run_lfe(charlist()) :: {:ok, binary()} | {:error, binary()}
   def run_lfe(cmd) do
-    {value, _} = apply(:lfe_shell, :run_string, [cmd])
-    {:ok, apply(:lfe_io, :prettyprint1, [value, 30])}
+    {value, _} = :lfe_shell.run_string(cmd)
+    {:ok, :lfe_io.prettyprint1(value, 30)}
   catch
     kind, value ->
       {:error, Exception.format(kind, value, __STACKTRACE__)}
