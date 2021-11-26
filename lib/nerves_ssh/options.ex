@@ -17,7 +17,7 @@ defmodule NervesSSH.Options do
 
   alias Nerves.Runtime.KV
 
-  @default_system_dir "/etc/ssh"
+  require Logger
 
   @otp System.otp_release() |> Integer.parse() |> elem(0)
 
@@ -39,7 +39,7 @@ defmodule NervesSSH.Options do
             user_passwords: [],
             port: 22,
             subsystems: [:ssh_sftpd.subsystem_spec(cwd: '/')],
-            system_dir: "",
+            system_dir: "/data/nerves_ssh",
             shell: :elixir,
             exec: :elixir,
             iex_opts: [dot_iex_path: Path.expand(".iex.exs")],
@@ -65,7 +65,6 @@ defmodule NervesSSH.Options do
   def with_defaults(opts \\ []) do
     opts
     |> new()
-    |> resolve_system_dir()
     |> add_fwup_subsystem()
     |> sanitize()
   end
@@ -83,6 +82,7 @@ defmodule NervesSSH.Options do
        key_cb_opts(opts) ++
        user_passwords_opts(opts))
     |> Keyword.merge(opts.daemon_option_overrides)
+    |> load_or_create_host_keys()
   end
 
   defp base_opts() do
@@ -256,37 +256,150 @@ defmodule NervesSSH.Options do
     %{opts | subsystems: new_subsystems}
   end
 
-  defp resolve_system_dir(opts) do
-    cond do
-      File.dir?(opts.system_dir) ->
-        opts
-
-      File.dir?(@default_system_dir) and host_keys_readable?(@default_system_dir) ->
-        %{opts | system_dir: @default_system_dir}
-
-      true ->
-        %{opts | system_dir: :code.priv_dir(:nerves_ssh)}
-    end
-  end
-
-  defp host_keys_readable?(path) do
-    ["ssh_host_rsa_key", "ssh_host_dsa_key", "ssh_host_ecdsa_key"]
-    |> Enum.map(fn name -> Path.join(path, name) end)
-    |> Enum.any?(&readable?/1)
-  end
-
-  defp readable?(path) do
-    case File.read(path) do
-      {:ok, _} -> true
-      _ -> false
-    end
-  end
-
   # :public_key.ssh_decode/2 was deprecated in OTP 24 and will be removed in OTP 26.
   # :ssh_file.decode/2 was introduced in OTP 24
   if @otp >= 24 do
     defp decode_key(key), do: :ssh_file.decode(key, :auth_keys)
   else
     defp decode_key(key), do: :public_key.ssh_decode(key, :auth_keys)
+  end
+
+  defp load_or_create_host_keys(daemon_opts) do
+    algs = available_and_supported_algorithms(daemon_opts)
+
+    load_host_keys(algs, daemon_opts)
+    |> maybe_create_host_key(algs, daemon_opts)
+    |> maybe_set_host_keys(daemon_opts)
+  end
+
+  defp available_and_supported_algorithms(daemon_opts) do
+    # For now, we just want the final scrubbed list of algorithms the server
+    # can use based on ours and the users definitions, so we take those out of
+    # our daemon options and run through the Erlang functions to resolve them
+    # for us, ignoring all other options If the other options are "Bad", we
+    # want :ssh to handle it later but not prevent our progress here
+    filtered =
+      Keyword.take(daemon_opts, [:modify_algorithms, :preferred_algorithms, :pref_public_key_algs])
+
+    ssh_opts = :ssh_options.handle_options(:server, filtered)
+
+    # This represents the logic in :ssh_connection_handler.available_hkey_algorithms/2.
+    # It is replicated here to leave the result as atoms and to skip the file
+    # read check that happens so we can do it later on.
+    supported = :ssh_transport.supported_algorithms(:public_key)
+    preferred = ssh_opts.preferred_algorithms[:public_key]
+    not_supported = preferred -- supported
+    preferred -- not_supported
+  end
+
+  defp load_host_keys(available_algorithms, daemon_opts) do
+    for alg <- available_algorithms,
+        r = :ssh_file.host_key(alg, daemon_opts),
+        match?({:ok, _}, r),
+        into: %{},
+        do: {alg, elem(r, 1)}
+  end
+
+  defp maybe_create_host_key(keys, _, _) when map_size(keys) > 0, do: keys
+
+  defp maybe_create_host_key(_, available_algs, daemon_opts) do
+    {hkey_filename, alg} = preferred_host_key_algorithm(available_algs)
+    key = generate_host_key(alg)
+
+    # Just attempt to write. If it fails for some reason, we will
+    # go through this host key create flow to try again.
+    attempt_host_key_write(daemon_opts, hkey_filename, key)
+
+    if is_list(alg), do: for(a <- alg, into: %{}, do: {a, key}), else: %{alg => key}
+  end
+
+  defp maybe_set_host_keys(host_keys, daemon_options) do
+    case daemon_options[:key_cb] do
+      nil ->
+        daemon_options
+
+      {mod, opts} ->
+        Keyword.put(daemon_options, :key_cb, {mod, put_in(opts, [:host_keys], host_keys)})
+
+      mod ->
+        Keyword.put(daemon_options, :key_cb, {mod, [host_keys: host_keys]})
+    end
+  end
+
+  defp preferred_host_key_algorithm(algs) do
+    if Enum.member?(algs, :"ssh-ed25519") do
+      {"ssh_host_ed25519_key", :"ssh-ed25519"}
+    else
+      {"ssh_host_rsa_key", [:"rsa-sha2-512", :"rsa-sha2-256", :"ssh-rsa"]}
+    end
+  end
+
+  defp generate_host_key(:"ssh-ed25519") do
+    {pub, priv} = :crypto.generate_key(:eddsa, :ed25519)
+    {:ed_pri, :ed25519, pub, priv}
+  end
+
+  defp generate_host_key(_alg) do
+    :public_key.generate_key({:rsa, 2048, 65537})
+  end
+
+  defp attempt_host_key_write(daemon_opts, hkey_filename, key) do
+    path = Path.join(daemon_opts[:system_dir], hkey_filename)
+
+    with :ok <- File.mkdir_p(daemon_opts[:system_dir]),
+         :ok <- File.write(path, encode_host_key(key)),
+         :ok <- File.chmod(path, 0o600) do
+      :ok
+    else
+      err ->
+        Logger.warn("""
+        [NervesSSH] Failed to write generated SSH host key to #{path} - #{inspect(err)}
+
+        The SSH daemon wil continue to run and use the generated key, but a new host key
+        will be generated the next time the daemon is started.
+        """)
+    end
+  end
+
+  defp encode_host_key({:ed_pri, alg, pub, priv}) do
+    # In future versions of Erlang, this might be supported.
+    # But for now, manually create the expected format
+    # See https://github.com/erlang/otp/pull/5520
+
+    alg_str = "ssh-#{alg}"
+    alg_l = byte_size(alg_str)
+    pub_l = byte_size(pub)
+    pubbuff = <<alg_l::32, alg_str::binary, pub_l::32, pub::binary>>
+    pubbuff_l = byte_size(pubbuff)
+    comment = "nerves_ssh-generated"
+    comment_l = byte_size(comment)
+    check = :crypto.strong_rand_bytes(4)
+
+    encrypted =
+      <<check::binary, check::binary, pubbuff::binary, 64::32, priv::binary, pub::binary,
+        comment_l::32, comment::binary>>
+
+    pad = for i <- 1..(8 - rem(byte_size(encrypted), 8)), into: <<>>, do: <<i>>
+    encrypted_l = byte_size(encrypted <> pad)
+
+    encoded =
+      <<"openssh-key-v1", 0, 4::32, "none", 4::32, "none", 0::32, 1::32, pubbuff_l::32,
+        pubbuff::binary, encrypted_l::32, encrypted::binary, pad::binary>>
+      |> Base.encode64()
+      |> String.codepoints()
+      |> Enum.chunk_every(68)
+      |> Enum.join("\n")
+
+    """
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    #{encoded}
+    -----END OPENSSH PRIVATE KEY-----
+    """
+  end
+
+  defp encode_host_key(rsa_key) do
+    :public_key.pem_entry_encode(:RSAPrivateKey, rsa_key)
+    |> List.wrap()
+    |> :public_key.pem_encode()
   end
 end

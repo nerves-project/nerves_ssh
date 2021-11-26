@@ -1,11 +1,16 @@
 defmodule NervesSSH.Keys do
   @moduledoc false
+  @behaviour :ssh_server_key_api
 
+  @impl :ssh_server_key_api
   def host_key(algorithm, options) do
-    # Delegate to system implementation for handling the host keys
-    :ssh_file.host_key(algorithm, options)
+    case options[:key_cb_private][:host_keys] do
+      %{^algorithm => key} -> {:ok, key}
+      _ -> {:error, :enoent}
+    end
   end
 
+  @impl :ssh_server_key_api
   def is_auth_key(key, _user, options) do
     # Grab the decoded authorized keys from the options
     cb_opts = Keyword.get(options, :key_cb_private)

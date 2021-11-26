@@ -1,5 +1,6 @@
 defmodule NervesSSH.OptionsTest do
   use ExUnit.Case
+  use Bitwise
 
   alias NervesSSH.Options
 
@@ -22,13 +23,16 @@ defmodule NervesSSH.OptionsTest do
 
     assert_options(daemon_options, [
       {:id_string, :random},
-      {:key_cb, {NervesSSH.Keys, [{:authorized_keys, []}]}},
-      {:system_dir, ''},
+      {:system_dir, '/data/nerves_ssh'},
       # {:shell, {Elixir.IEx, :start, [[dot_iex_path: @dot_iex_path]]}},
       # {:exec, &start_exec/3},
       {:subsystems, [:ssh_sftpd.subsystem_spec(cwd: '/')]},
       {:inet, :inet6}
     ])
+
+    {NervesSSH.Keys, key_cb_private} = daemon_options[:key_cb]
+    assert key_cb_private[:authorized_keys] == []
+    assert map_size(key_cb_private[:host_keys]) > 0
   end
 
   test "Options.new/1 shows user dot_iex_path" do
@@ -40,26 +44,20 @@ defmodule NervesSSH.OptionsTest do
     opts = Options.new(authorized_keys: [@rsa_public_key, @ecdsa_public_key])
     daemon_options = Options.daemon_options(opts)
 
-    assert daemon_options[:key_cb] ==
-             {NervesSSH.Keys,
-              [
-                authorized_keys:
-                  @rsa_public_key_decoded ++
-                    @ecdsa_public_key_decoded
-              ]}
+    {NervesSSH.Keys, key_cb_private} = daemon_options[:key_cb]
+
+    assert key_cb_private[:authorized_keys] ==
+             @rsa_public_key_decoded ++ @ecdsa_public_key_decoded
   end
 
   test "authorized keys as one string" do
     opts = Options.new(authorized_keys: [@rsa_public_key <> "\n" <> @ecdsa_public_key])
     daemon_options = Options.daemon_options(opts)
 
-    assert daemon_options[:key_cb] ==
-             {NervesSSH.Keys,
-              [
-                authorized_keys:
-                  @rsa_public_key_decoded ++
-                    @ecdsa_public_key_decoded
-              ]}
+    {NervesSSH.Keys, key_cb_private} = daemon_options[:key_cb]
+
+    assert key_cb_private[:authorized_keys] ==
+             @rsa_public_key_decoded ++ @ecdsa_public_key_decoded
   end
 
   test "username/passwords are turned into charlists" do
@@ -100,5 +98,85 @@ defmodule NervesSSH.OptionsTest do
     opts = Options.new()
 
     assert opts == Options.sanitize(opts)
+  end
+
+  describe "system host keys" do
+    setup context do
+      sys_dir = '/tmp/nerves_ssh/sys_#{context.algorithm}-#{:rand.uniform(1000)}'
+      File.rm_rf!(sys_dir)
+      File.mkdir_p!(sys_dir)
+      on_exit(fn -> File.rm_rf!(sys_dir) end)
+      [sys_dir: sys_dir]
+    end
+
+    @tag algorithm: :ed25519
+    test "can generate an Ed25519 host key when missing", %{sys_dir: sys_dir} do
+      refute File.exists?(Path.join(sys_dir, "ssh_host_ed25519_key"))
+
+      daemon_opts = Options.daemon_options(Options.new(system_dir: sys_dir))
+      {NervesSSH.Keys, key_cb_private} = daemon_opts[:key_cb]
+
+      assert key_cb_private[:host_keys][:"ssh-ed25519"]
+
+      key_path = Path.join(sys_dir, "ssh_host_ed25519_key")
+      assert File.exists?(key_path)
+      assert (File.stat!(key_path).mode &&& 0o777) == 0o600
+    end
+
+    @tag algorithm: :ed25519
+    test "can generate an Ed25519 host key when file is bad", %{sys_dir: sys_dir} do
+      # assert {:ok, _key} = NervesSSH.Keys.host_key(unquote(alg), system_dir: sys_dir)
+      file = Path.join(sys_dir, "ssh_host_ed25519_key")
+      File.write!(file, "this is a bad key")
+
+      daemon_opts = Options.daemon_options(Options.new(system_dir: sys_dir))
+      {NervesSSH.Keys, key_cb_private} = daemon_opts[:key_cb]
+
+      assert key_cb_private[:host_keys][:"ssh-ed25519"]
+
+      assert File.exists?(Path.join(sys_dir, "ssh_host_ed25519_key"))
+    end
+
+    @tag algorithm: :rsa
+    test "Falls back to RSA when no host keys and Ed25519 is not supported", %{sys_dir: sys_dir} do
+      refute File.exists?(Path.join(sys_dir, "ssh_host_rsa_key"))
+
+      daemon_opts =
+        Options.new(
+          system_dir: sys_dir,
+          daemon_option_overrides: [modify_algorithms: [rm: [public_key: [:"ssh-ed25519"]]]]
+        )
+        |> Options.daemon_options()
+
+      {NervesSSH.Keys, key_cb_private} = daemon_opts[:key_cb]
+
+      assert key_cb_private[:host_keys][:"rsa-sha2-512"]
+      assert key_cb_private[:host_keys][:"rsa-sha2-256"]
+      assert key_cb_private[:host_keys][:"ssh-rsa"]
+
+      assert File.exists?(Path.join(sys_dir, "ssh_host_rsa_key"))
+    end
+
+    @tag algorithm: :rsa
+    test "can generate an RSA host key when no host keys, Ed25519 is not supported, and RSA file is bad",
+         %{sys_dir: sys_dir} do
+      file = Path.join(sys_dir, "ssh_host_rsa_key")
+      File.write!(file, "this is a bad key")
+
+      daemon_opts =
+        Options.new(
+          system_dir: sys_dir,
+          daemon_option_overrides: [modify_algorithms: [rm: [public_key: [:"ssh-ed25519"]]]]
+        )
+        |> Options.daemon_options()
+
+      {NervesSSH.Keys, key_cb_private} = daemon_opts[:key_cb]
+
+      assert key_cb_private[:host_keys][:"rsa-sha2-512"]
+      assert key_cb_private[:host_keys][:"rsa-sha2-256"]
+      assert key_cb_private[:host_keys][:"ssh-rsa"]
+
+      assert File.exists?(Path.join(sys_dir, "ssh_host_rsa_key"))
+    end
   end
 end

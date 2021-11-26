@@ -15,6 +15,7 @@ defmodule NervesSshTest do
       user_passwords: [
         {"test_user", "password"}
       ],
+      system_dir: Path.absname("test/fixtures/system_dir"),
       port: ssh_port()
     )
   end
@@ -90,7 +91,8 @@ defmodule NervesSshTest do
        port: ssh_port(),
        authorized_keys: [
          File.read!("test/fixtures/good_user_dir/id_rsa.pub")
-       ]}
+       ],
+       system_dir: Path.absname("test/fixtures/system_dir")}
     ])
 
     assert :ok == Application.start(:nerves_ssh)
@@ -120,7 +122,7 @@ defmodule NervesSshTest do
         NervesSSH.Options.new(
           user_passwords: [{"test_user", "not_the_right_password"}],
           port: ssh_port(),
-          system_dir: :code.priv_dir(:nerves_ssh)
+          system_dir: Path.absname("test/fixtures/system_dir")
         )
       )
 
@@ -159,6 +161,7 @@ defmodule NervesSshTest do
     File.chmod!("test/fixtures/good_user_dir/id_rsa", 0o600)
     File.rm_rf!(filename)
     File.rm_rf!(download_path)
+
     File.write!(download_path, "asdf")
 
     {_output, 0} =
@@ -189,6 +192,7 @@ defmodule NervesSshTest do
     File.chmod!("test/fixtures/good_user_dir/id_rsa", 0o600)
     File.rm_rf!(filename)
     File.rm_rf!(upload_path)
+
     File.write!(filename, "asdf")
 
     {_output, 0} =

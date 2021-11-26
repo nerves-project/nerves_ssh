@@ -82,7 +82,7 @@ NervesSSH supports the following configuration items:
 * `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
 * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start.
   Defaults to SFTP and `ssh_subsystem_fwup`
-* `:system_dir` - where to find host keys
+* `:system_dir` - where to find host keys. Defaults to `"/data/nerves_ssh"`
 * `:shell` - the language of the shell (`:elixir`, `:erlang`, `:lfe`,  or
   `:disabled`). Defaults to `:elixir`.
 * `:exec` - the language to use for commands sent over ssh (`:elixir`,
@@ -90,6 +90,39 @@ NervesSSH supports the following configuration items:
 * `:iex_opts` - additional options to use when starting up IEx
 * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`.
   These take precedence and are unchecked.
+
+
+### SSH host keys
+
+SSH identifies itself to clients using a host key. Clients can record the key
+and use it to detect man-in-the-middle attacks and other shenanigans on future
+connections. Host keys are stored in the `:system_dir` (see configuration) and
+named `ssh_host_rsa_key`, `ssh_host_ed25519_key`, etc.
+
+NervesSSH will create a host key the first time it starts if one does not exist.
+The key will be stored in `:system_dir`. Be aware that the host key is not
+encrypted or protected so anyone with access to the device can get it if they
+choose.
+
+If the `:system_dir` is not writable, NervesSSH will create an in-memory host
+key so that users can still log in. In fact, even if the file system is
+writable, NervesSSH will verify the host key before using it and recreate it if
+corrupt. The goal is that broken host keys to not result in a situation where
+it's impossible to log into a device. Your SSH client complaining about the host
+key changing will be the hint that something is wrong.
+
+NervesSSH currently supports
+[Ed25519](https://en.wikipedia.org/wiki/EdDSA#Ed25519) and
+[RSA](https://en.wikipedia.org/wiki/RSA_(cryptosystem)) host keys.
+
+If you rewrite your MicroSD cards often and don't want to get SSH client errors,
+add the following to your `~/.ssh/config`:
+
+```sshconfig
+Host nerves.local
+    UserKnownHostsFile /dev/null
+    StrictHostKeyChecking no
+```
 
 ## Authentication
 
