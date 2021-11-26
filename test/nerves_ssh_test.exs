@@ -25,7 +25,8 @@ defmodule NervesSshTest do
         ip: '127.0.0.1',
         port: ssh_port(),
         user_interaction: false,
-        silently_accept_hosts: true
+        silently_accept_hosts: true,
+        save_accepted_host: false
       ]
       |> Keyword.merge(options)
 
