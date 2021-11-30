@@ -21,3 +21,7 @@ erl_crash.dump
 
 # Ignore package tarball (built via "mix hex.build").
 nerves_ssh-*.tar
+
+# Ignore files created by tests
+/test_download.txt
+/test_upload.txt
