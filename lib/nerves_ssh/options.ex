@@ -21,6 +21,8 @@ defmodule NervesSSH.Options do
 
   @otp System.otp_release() |> Integer.parse() |> elem(0)
 
+  if @otp < 23, do: raise("NervesSSH requires OTP 23 or higher")
+
   @type language :: :elixir | :erlang | :lfe | :disabled
 
   @type t :: %__MODULE__{
@@ -92,76 +94,46 @@ defmodule NervesSSH.Options do
     ] ++ hardening_opts()
   end
 
-  if @otp >= 23 do
-    defp hardening_opts() do
-      [
-        id_string: :random,
-        modify_algorithms: [
-          rm: [
-            kex: [
-              :"diffie-hellman-group-exchange-sha256",
-              :"ecdh-sha2-nistp384",
-              :"ecdh-sha2-nistp521",
-              :"ecdh-sha2-nistp256"
+  defp hardening_opts() do
+    [
+      id_string: :random,
+      modify_algorithms: [
+        rm: [
+          kex: [
+            :"diffie-hellman-group-exchange-sha256",
+            :"ecdh-sha2-nistp384",
+            :"ecdh-sha2-nistp521",
+            :"ecdh-sha2-nistp256"
+          ],
+          cipher: [
+            client2server: [
+              :"aes256-cbc",
+              :"aes192-cbc",
+              :"aes128-cbc",
+              :"3des-cbc"
             ],
-            cipher: [
-              client2server: [
-                :"aes256-cbc",
-                :"aes192-cbc",
-                :"aes128-cbc",
-                :"3des-cbc"
-              ],
-              server2client: [
-                :"aes256-cbc",
-                :"aes192-cbc",
-                :"aes128-cbc",
-                :"3des-cbc"
-              ]
+            server2client: [
+              :"aes256-cbc",
+              :"aes192-cbc",
+              :"aes128-cbc",
+              :"3des-cbc"
+            ]
+          ],
+          mac: [
+            client2server: [
+              :"hmac-sha2-256",
+              :"hmac-sha1-etm@openssh.com",
+              :"hmac-sha1"
             ],
-            mac: [
-              client2server: [
-                :"hmac-sha2-256",
-                :"hmac-sha1-etm@openssh.com",
-                :"hmac-sha1"
-              ],
-              server2client: [
-                :"hmac-sha2-256",
-                :"hmac-sha1-etm@openssh.com",
-                :"hmac-sha1"
-              ]
+            server2client: [
+              :"hmac-sha2-256",
+              :"hmac-sha1-etm@openssh.com",
+              :"hmac-sha1"
             ]
           ]
         ]
       ]
-    end
-  else
-    defp hardening_opts() do
-      [
-        id_string: :random,
-        modify_algorithms: [
-          rm: [
-            cipher: [
-              client2server: [
-                :"3des-cbc"
-              ],
-              server2client: [
-                :"3des-cbc"
-              ]
-            ],
-            mac: [
-              client2server: [
-                :"hmac-sha1-etm@openssh.com",
-                :"hmac-sha1"
-              ],
-              server2client: [
-                :"hmac-sha1-etm@openssh.com",
-                :"hmac-sha1"
-              ]
-            ]
-          ]
-        ]
-      ]
-    end
+    ]
   end
 
   defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
@@ -171,31 +143,10 @@ defmodule NervesSSH.Options do
   defp shell_opts(%{shell: :lfe}), do: [{:shell, {:lfe_shell, :start, []}}]
   defp shell_opts(%{shell: :disabled}), do: [shell: :disabled]
 
-  if @otp >= 23 do
-    defp exec_opts(%{exec: :elixir}), do: [exec: {:direct, &NervesSSH.Exec.run_elixir/1}]
-    defp exec_opts(%{exec: :erlang}), do: []
-    defp exec_opts(%{exec: :lfe}), do: [exec: {:direct, &NervesSSH.Exec.run_lfe/1}]
-    defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
-  else
-    # Old way of passing exec options
-    defp exec_opts(%{exec: :elixir}),
-      do: [exec: fn cmd -> spawn(__MODULE__, :run_exec, [NervesSSH.Exec, :run_elixir, [cmd]]) end]
-
-    defp exec_opts(%{exec: :erlang}), do: []
-    # Don't support :lfe the old way
-    defp exec_opts(%{exec: :lfe}), do: []
-    defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
-
-    def run_exec(m, f, a) do
-      case apply(m, f, a) do
-        {:ok, output} ->
-          IO.binwrite(output)
-
-        {:error, output} ->
-          IO.binwrite(output)
-      end
-    end
-  end
+  defp exec_opts(%{exec: :elixir}), do: [exec: {:direct, &NervesSSH.Exec.run_elixir/1}]
+  defp exec_opts(%{exec: :erlang}), do: []
+  defp exec_opts(%{exec: :lfe}), do: [exec: {:direct, &NervesSSH.Exec.run_lfe/1}]
+  defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
 
   defp key_cb_opts(opts) do
     keys = Enum.flat_map(opts.authorized_keys, &decode_key/1)
