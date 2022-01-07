@@ -9,7 +9,7 @@ features:
 1. Automatic startup of the SSH daemon on initialization
 2. Ability to hook the SSH daemon into a supervision tree of your choosing
 3. Easy setup of SSH firmware updates for Nerves
-4. Easy shell and exec setup for Erlang and Elixir
+4. Easy shell and exec setup for Erlang, Elixir, and LFE
 5. Some protection from easy-to-make mistakes that would cause ssh to not be
    available
 
