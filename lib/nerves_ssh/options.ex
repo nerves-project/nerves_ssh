@@ -7,6 +7,7 @@ defmodule NervesSSH.Options do
   * `:authorized_keys` - a list of SSH authorized key file string
   * `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
   * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `ssh_subsystem_fwup`
+  * `:user_dir` - where to find authorized_keys file
   * `:system_dir` - where to find host keys
   * `:shell` - the language of the shell (`:elixir`, `:erlang`, `:lfe` or `:disabled`). Defaults to `:elixir`.
   * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
@@ -27,10 +28,12 @@ defmodule NervesSSH.Options do
 
   @type t :: %__MODULE__{
           authorized_keys: [String.t()],
+          decoded_authorized_keys: [:public_key.public_key()],
           user_passwords: [{String.t(), String.t()}],
           port: non_neg_integer(),
           subsystems: [:ssh.subsystem_spec()],
           system_dir: Path.t(),
+          user_dir: Path.t(),
           shell: language(),
           exec: language(),
           iex_opts: keyword(),
@@ -38,10 +41,12 @@ defmodule NervesSSH.Options do
         }
 
   defstruct authorized_keys: [],
+            decoded_authorized_keys: [],
             user_passwords: [],
             port: 22,
             subsystems: [:ssh_sftpd.subsystem_spec(cwd: '/')],
             system_dir: "/data/nerves_ssh",
+            user_dir: "/data/nerves_ssh/default_user",
             shell: :elixir,
             exec: :elixir,
             iex_opts: [dot_iex_path: Path.expand(".iex.exs")],
@@ -58,6 +63,7 @@ defmodule NervesSSH.Options do
     opts = Enum.reject(opts, fn {_k, v} -> is_nil(v) end)
 
     struct(__MODULE__, opts)
+    |> decode_authorized_keys()
   end
 
   @doc """
@@ -85,6 +91,68 @@ defmodule NervesSSH.Options do
        user_passwords_opts(opts))
     |> Keyword.merge(opts.daemon_option_overrides)
     |> load_or_create_host_keys()
+  end
+
+  @doc """
+  Add an authorized key
+  """
+  @spec add_authorized_key(t(), String.t()) :: t()
+  def add_authorized_key(opts, key) do
+    update_in(opts.authorized_keys, &Enum.uniq(&1 ++ [key]))
+    |> decode_authorized_keys()
+  end
+
+  @doc """
+  Remove an authorized key
+  """
+  @spec remove_authorized_key(t(), String.t()) :: t()
+  def remove_authorized_key(opts, key) do
+    %{opts | decoded_authorized_keys: []}
+    |> Map.update!(:authorized_keys, &for(k <- &1, k != key, do: k))
+    |> decode_authorized_keys()
+  end
+
+  @doc """
+  Load authorized keys from the authorized_keys file
+  """
+  @spec load_authorized_keys(t()) :: t()
+  def load_authorized_keys(opts) do
+    case File.read(authorized_keys_path(opts)) do
+      {:ok, str} ->
+        from_file = String.split(str, "\n", trim: true)
+
+        update_in(opts.authorized_keys, &Enum.uniq(&1 ++ from_file))
+        |> decode_authorized_keys()
+
+      {:error, err} ->
+        # We only care about the error if the file actually exists
+        if err != :enoent,
+          do: Logger.error("[NervesSSH] Failed to read authorized_keys file: #{err}")
+
+        opts
+    end
+  end
+
+  @doc """
+  Decode the authorized keys into Erlang public key format
+  """
+  @spec decode_authorized_keys(t()) :: t()
+  def decode_authorized_keys(opts) do
+    keys = for {key, _} <- Enum.flat_map(opts.authorized_keys, &decode_key/1), do: key
+    update_in(opts.decoded_authorized_keys, &Enum.uniq(&1 ++ keys))
+  end
+
+  @doc """
+  Save the authorized keys to authorized_keys file
+  """
+  @spec save_authorized_keys(t()) :: :ok | {:error, File.posix()}
+  def save_authorized_keys(opts) do
+    kpath = authorized_keys_path(opts)
+
+    with :ok <- File.mkdir_p(Path.dirname(kpath)) do
+      formatted = Enum.join(opts.authorized_keys, "\n")
+      File.write(kpath, formatted)
+    end
   end
 
   defp base_opts() do
@@ -148,11 +216,7 @@ defmodule NervesSSH.Options do
   defp exec_opts(%{exec: :lfe}), do: [exec: {:direct, &NervesSSH.Exec.run_lfe/1}]
   defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
 
-  defp key_cb_opts(opts) do
-    keys = Enum.flat_map(opts.authorized_keys, &decode_key/1)
-
-    [key_cb: {NervesSSH.Keys, [authorized_keys: keys]}]
-  end
+  defp key_cb_opts(_opts), do: [key_cb: NervesSSH.Keys]
 
   defp user_passwords_opts(opts) do
     passes =
@@ -164,7 +228,7 @@ defmodule NervesSSH.Options do
   end
 
   defp authentication_daemon_opts(opts) do
-    [system_dir: to_charlist(opts.system_dir)]
+    [system_dir: to_charlist(opts.system_dir), user_dir: to_charlist(opts.user_dir)]
   end
 
   defp subsystem_opts(opts) do
@@ -352,5 +416,10 @@ defmodule NervesSSH.Options do
     :public_key.pem_entry_encode(:RSAPrivateKey, rsa_key)
     |> List.wrap()
     |> :public_key.pem_encode()
+  end
+
+  defp authorized_keys_path(opts) do
+    user_dir = opts.daemon_option_overrides[:user_dir] || opts.user_dir
+    Path.join(user_dir, "authorized_keys")
   end
 end

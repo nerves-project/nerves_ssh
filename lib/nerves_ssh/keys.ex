@@ -11,12 +11,8 @@ defmodule NervesSSH.Keys do
   end
 
   @impl :ssh_server_key_api
-  def is_auth_key(key, _user, options) do
-    # Grab the decoded authorized keys from the options
-    cb_opts = Keyword.get(options, :key_cb_private)
-    keys = Keyword.get(cb_opts, :authorized_keys)
-
+  def is_auth_key(key, _user, _options) do
     # If any of them match, then we're good.
-    Enum.any?(keys, fn {k, _info} -> k == key end)
+    Enum.member?(NervesSSH.configuration().decoded_authorized_keys, key)
   end
 end

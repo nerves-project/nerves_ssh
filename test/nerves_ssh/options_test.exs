@@ -4,10 +4,10 @@ defmodule NervesSSH.OptionsTest do
 
   alias NervesSSH.Options
 
-  @rsa_public_key "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDT6lRp4wT80iA/GW2Vo+d37ytXGZ/e03h8znlPtwybn9k9ZDbx+EAc7jPNJmXsy7+lIpWGfYtBlgKZomEDYKI7HOSfQTtPS6mWRaHbP58lSkunLEL851kh3HO3/ikaC+TXZJEMtb+5NTJ+vwqg2ysrUlz1L91M0AQNk73eW+KLh/pSDsH5XCvVSWqrpMiHySL4IQV9eY+/4Q9Pq9D9vBk/jaSRXWhTUxo09IYxgVnYK2Sd9gxF97cM7mCQdj6A38bfMFrOZManlbGReUwpFoBWsIIDbGYvNBMsVQF7WLy0FGt4UGqYTZUppWZTEpkmiyMwPCVwBsfJtyXh1gQzU4iH"
-  @rsa_public_key_decoded :public_key.ssh_decode(@rsa_public_key, :auth_keys)
+  @rsa_public_key String.trim(File.read!("test/fixtures/good_user_dir/id_rsa.pub"))
+  @rsa_public_key_decoded elem(hd(:public_key.ssh_decode(@rsa_public_key, :auth_keys)), 0)
   @ecdsa_public_key "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBK9UY+mjrTRdnO++HmV3TbSJkTkyR1tEqz0dITc3TD4l+WWIqvbOtUg2MN/Tg+bWtvD6aEX7/fjCGTxwe7BmaoI="
-  @ecdsa_public_key_decoded :public_key.ssh_decode(@ecdsa_public_key, :auth_keys)
+  @ecdsa_public_key_decoded elem(hd(:public_key.ssh_decode(@ecdsa_public_key, :auth_keys)), 0)
 
   defp assert_options(got, expected) do
     for option <- expected do
@@ -31,7 +31,6 @@ defmodule NervesSSH.OptionsTest do
     ])
 
     {NervesSSH.Keys, key_cb_private} = daemon_options[:key_cb]
-    assert key_cb_private[:authorized_keys] == []
     assert map_size(key_cb_private[:host_keys]) > 0
   end
 
@@ -42,22 +41,59 @@ defmodule NervesSSH.OptionsTest do
 
   test "authorized keys passed individually" do
     opts = Options.new(authorized_keys: [@rsa_public_key, @ecdsa_public_key])
-    daemon_options = Options.daemon_options(opts)
-
-    {NervesSSH.Keys, key_cb_private} = daemon_options[:key_cb]
-
-    assert key_cb_private[:authorized_keys] ==
-             @rsa_public_key_decoded ++ @ecdsa_public_key_decoded
+    assert opts.decoded_authorized_keys == [@rsa_public_key_decoded, @ecdsa_public_key_decoded]
   end
 
   test "authorized keys as one string" do
     opts = Options.new(authorized_keys: [@rsa_public_key <> "\n" <> @ecdsa_public_key])
-    daemon_options = Options.daemon_options(opts)
+    assert opts.decoded_authorized_keys == [@rsa_public_key_decoded, @ecdsa_public_key_decoded]
+  end
 
-    {NervesSSH.Keys, key_cb_private} = daemon_options[:key_cb]
+  test "add authorized keys" do
+    opts = Options.new()
+    assert opts.authorized_keys == []
 
-    assert key_cb_private[:authorized_keys] ==
-             @rsa_public_key_decoded ++ @ecdsa_public_key_decoded
+    added =
+      opts
+      |> Options.add_authorized_key(@rsa_public_key)
+      |> Options.add_authorized_key(@ecdsa_public_key)
+
+    assert added.authorized_keys == [@rsa_public_key, @ecdsa_public_key]
+    assert added.decoded_authorized_keys == [@rsa_public_key_decoded, @ecdsa_public_key_decoded]
+  end
+
+  test "remove authorized key" do
+    opts = Options.new(authorized_keys: [@rsa_public_key, @ecdsa_public_key])
+    assert opts.authorized_keys == [@rsa_public_key, @ecdsa_public_key]
+    assert opts.decoded_authorized_keys == [@rsa_public_key_decoded, @ecdsa_public_key_decoded]
+
+    removed = Options.remove_authorized_key(opts, @rsa_public_key)
+
+    assert removed.authorized_keys == [@ecdsa_public_key]
+    assert removed.decoded_authorized_keys == [@ecdsa_public_key_decoded]
+  end
+
+  test "load authorized keys from file" do
+    opts =
+      Options.new(user_dir: "test/fixtures/system_dir")
+      |> Options.load_authorized_keys()
+
+    assert opts.authorized_keys == [@rsa_public_key]
+    assert opts.decoded_authorized_keys == [@rsa_public_key_decoded]
+  end
+
+  test "can save authorized_keys to file" do
+    user_dir = '/tmp/nerves_ssh/user_dir-#{:rand.uniform(1000)}'
+    authorized_keys = Path.join(user_dir, "authorized_keys")
+    File.rm_rf!(user_dir)
+    File.mkdir_p!(user_dir)
+    on_exit(fn -> File.rm_rf!(user_dir) end)
+
+    %Options{user_dir: user_dir, authorized_keys: [@rsa_public_key]}
+    |> Options.save_authorized_keys()
+
+    assert File.exists?(authorized_keys)
+    assert String.contains?(File.read!(authorized_keys), @rsa_public_key)
   end
 
   test "username/passwords are turned into charlists" do
