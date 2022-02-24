@@ -8,14 +8,18 @@ defmodule NervesSshTest do
   ]
   @key_login [user: 'anything_but_root', user_dir: Path.absname("test/fixtures/good_user_dir")]
   @base_ssh_port 4022
+  @rsa_public_key String.trim(File.read!("test/fixtures/good_user_dir/id_rsa.pub"))
+  @ed25519_public_key String.trim(File.read!("test/fixtures/good_user_dir/id_ed25519.pub"))
+  @ed25519_public_key_decoded elem(hd(:public_key.ssh_decode(@ed25519_public_key, :auth_keys)), 0)
 
   defp nerves_ssh_config() do
     NervesSSH.Options.with_defaults(
-      authorized_keys: [File.read!("test/fixtures/good_user_dir/id_rsa.pub")],
+      authorized_keys: [@rsa_public_key],
       user_passwords: [
         {"test_user", "password"}
       ],
       system_dir: Path.absname("test/fixtures/system_dir"),
+      user_dir: Path.absname("test/fixtures/system_dir"),
       port: ssh_port()
     )
   end
@@ -89,9 +93,8 @@ defmodule NervesSshTest do
     Application.put_all_env([
       {:nerves_ssh,
        port: ssh_port(),
-       authorized_keys: [
-         File.read!("test/fixtures/good_user_dir/id_rsa.pub")
-       ],
+       authorized_keys: [@rsa_public_key],
+       user_dir: Path.absname("test/fixtures/system_dir"),
        system_dir: Path.absname("test/fixtures/system_dir")}
     ])
 
@@ -122,7 +125,8 @@ defmodule NervesSshTest do
         NervesSSH.Options.new(
           user_passwords: [{"test_user", "not_the_right_password"}],
           port: ssh_port(),
-          system_dir: Path.absname("test/fixtures/system_dir")
+          system_dir: Path.absname("test/fixtures/system_dir"),
+          user_dir: Path.absname("test/fixtures/system_dir")
         )
       )
 
@@ -210,5 +214,32 @@ defmodule NervesSshTest do
       ])
 
     assert File.read!(upload_path) == "asdf"
+  end
+
+  @tag :has_good_sshd_exec
+  test "adding public key at runtime" do
+    tmp_user_dir = "/tmp/nerves_ssh/user_dir-add_key-#{:rand.uniform(1000)}"
+    File.rm_rf!(tmp_user_dir)
+    on_exit(fn -> File.rm_rf!(tmp_user_dir) end)
+
+    config = %{
+      nerves_ssh_config()
+      | user_dir: tmp_user_dir,
+        authorized_keys: [],
+        decoded_authorized_keys: []
+    }
+
+    start_supervised!({NervesSSH, config})
+
+    assert {:error, _} = ssh_run("1 + 1", @key_login)
+
+    NervesSSH.add_authorized_key(@ed25519_public_key)
+    new_opts = NervesSSH.configuration()
+
+    assert new_opts.authorized_keys == [@ed25519_public_key]
+    assert new_opts.decoded_authorized_keys == [@ed25519_public_key_decoded]
+    assert File.exists?(Path.join(tmp_user_dir, "authorized_keys"))
+
+    assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
   end
 end
