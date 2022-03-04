@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.0
+
+`NervesSSH` now requires Elixir >= 1.10 and OTP >=23
+
+* New features
+  * Support for adding authorized public keys at runtime
+  * Authorized public keys are also saved/read from `authorized_keys` file
+  * Support for adding user credentials at runtime
+  * Server host key is now generated on device if missing rather than
+    relying on hard-coded host key provided by this lib. This should not
+    be a breaking change, though you may be prompted to trust the new
+    host key if `StrictHostKeyChecking yes` is set in your `~/.ssh/config`
+
 ## v0.2.3
 
 * New features
