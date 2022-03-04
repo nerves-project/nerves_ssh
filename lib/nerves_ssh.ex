@@ -70,6 +70,25 @@ defmodule NervesSSH do
     GenServer.call(__MODULE__, {:remove_authorized_key, key})
   end
 
+  @doc """
+  Add a user credential to the SSH daemon
+
+  Setting password to `""` or `nil` will effectively be passwordless
+  authentication for this user
+  """
+  @spec add_user(String.t(), String.t() | nil) :: :ok
+  def add_user(user, password) do
+    GenServer.call(__MODULE__, {:add_user, [user, password]})
+  end
+
+  @doc """
+  Remove a user credential from the SSH daemon
+  """
+  @spec remove_user(String.t()) :: :ok
+  def remove_user(user) do
+    GenServer.call(__MODULE__, {:remove_user, [user]})
+  end
+
   @impl true
   def init(opts) do
     # Make sure we can attempt SSH daemon cleanup if
@@ -119,6 +138,12 @@ defmodule NervesSSH do
     state =
       update_in(state.opts, &apply(Options, fun, [&1, key]))
       |> try_save_authorized_keys()
+
+    {:reply, :ok, state}
+  end
+
+  def handle_call({fun, args}, _from, state) when fun in [:add_user, :remove_user] do
+    state = update_in(state.opts, &apply(Options, fun, [&1 | args]))
 
     {:reply, :ok, state}
   end

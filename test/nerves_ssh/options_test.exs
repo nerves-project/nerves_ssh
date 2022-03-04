@@ -104,6 +104,30 @@ defmodule NervesSSH.OptionsTest do
              [{'alice', 'password'}, {'bob', '1234'}]
   end
 
+  test "adding user/password to options" do
+    opts = Options.new()
+
+    assert opts.user_passwords == []
+
+    updated =
+      opts
+      |> Options.add_user("jon", "wat")
+      |> Options.add_user("frank", "")
+      |> Options.add_user("connor", nil)
+
+    assert updated.user_passwords == [
+             {"connor", nil},
+             {"frank", ""},
+             {"jon", "wat"}
+           ]
+  end
+
+  test "removing user from options" do
+    opts = Options.new(user_passwords: [{"howdy", "partner"}])
+
+    assert Options.remove_user(opts, "howdy").user_passwords == []
+  end
+
   test "adding daemon options" do
     opts = Options.new(daemon_option_overrides: [my_option: 1])
     daemon_options = Options.daemon_options(opts)

@@ -155,6 +155,23 @@ defmodule NervesSSH.Options do
     end
   end
 
+  @doc """
+  Add user credential to SSH options
+  """
+  @spec add_user(t(), String.t(), String.t() | nil) :: t()
+  def add_user(opts, user, password)
+      when is_binary(user) and (is_binary(password) or is_nil(password)) do
+    update_in(opts.user_passwords, &Enum.uniq_by([{user, password} | &1], fn {u, _} -> u end))
+  end
+
+  @doc """
+  Remove user credential from SSH options
+  """
+  @spec remove_user(t(), String.t()) :: t()
+  def remove_user(opts, user) do
+    update_in(opts.user_passwords, &for({u, _} = k <- &1, u != user, do: k))
+  end
+
   defp base_opts() do
     [
       inet: :inet6,
@@ -224,7 +241,7 @@ defmodule NervesSSH.Options do
         {to_charlist(user), to_charlist(password)}
       end
 
-    [user_passwords: passes]
+    [user_passwords: passes, pwdfun: &NervesSSH.UserPasswords.check/4]
   end
 
   defp authentication_daemon_opts(opts) do

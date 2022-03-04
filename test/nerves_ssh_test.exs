@@ -267,4 +267,21 @@ defmodule NervesSshTest do
 
     assert {:error, _} = ssh_run("1 + 1", @key_login)
   end
+
+  @tag :has_good_sshd_exec
+  test "adding user/password at runtime" do
+    start_supervised!({NervesSSH, nerves_ssh_config()})
+    refute {:ok, "2", 0} == ssh_run("1 + 1", user: 'jon', password: 'wat')
+    NervesSSH.add_user("jon", "wat")
+    assert {:ok, "2", 0} == ssh_run("1 + 1", user: 'jon', password: 'wat')
+  end
+
+  @tag :has_good_sshd_exec
+  test "removing user/password at runtime" do
+    start_supervised!({NervesSSH, nerves_ssh_config()})
+    login = Keyword.drop(@username_login, [:user_dir])
+    assert {:ok, "2", 0} == ssh_run("1 + 1", login)
+    NervesSSH.remove_user("#{login[:user]}")
+    refute {:ok, "2", 0} == ssh_run("1 + 1", login)
+  end
 end
