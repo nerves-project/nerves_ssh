@@ -242,4 +242,29 @@ defmodule NervesSshTest do
 
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
   end
+
+  @tag :has_good_sshd_exec
+  test "removing public key at runtime" do
+    tmp_user_dir = "/tmp/nerves_ssh/user_dir-add_key-#{:rand.uniform(1000)}"
+    File.rm_rf!(tmp_user_dir)
+    on_exit(fn -> File.rm_rf!(tmp_user_dir) end)
+
+    config = %{
+      nerves_ssh_config()
+      | user_dir: tmp_user_dir,
+        authorized_keys: [@ed25519_public_key]
+    }
+
+    start_supervised!({NervesSSH, config})
+
+    assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
+
+    NervesSSH.remove_authorized_key(@ed25519_public_key)
+    new_opts = NervesSSH.configuration()
+
+    assert new_opts.authorized_keys == []
+    assert new_opts.decoded_authorized_keys == []
+
+    assert {:error, _} = ssh_run("1 + 1", @key_login)
+  end
 end
