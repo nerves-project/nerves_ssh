@@ -91,7 +91,6 @@ NervesSSH supports the following configuration items:
 * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`.
   These take precedence and are unchecked.
 
-
 ### SSH host keys
 
 SSH identifies itself to clients using a host key. Clients can record the key
@@ -161,6 +160,9 @@ config :nerves_ssh,
   ]
 ```
 
+See `NervesSSH.add_authorized_key/1` and `NervesSSH.remove_authorized_key/1`
+for managing public keys at runtime.
+
 ### Username/password authentication
 
 The SSH console uses public key authentication by default, but it can be
@@ -174,6 +176,10 @@ config :nerves_ssh,
     {"username", "password"}
   ]
 ```
+
+You can use `NervesSSH.add_user/2` and `NervesSSH.remove_user/1` for managing
+credentials at runtime, but they are not saved to disk so restarting `NervesSSH`
+will cause them to be lost (such as a reboot or daemon crash)
 
 ## Upgrade from `NervesFirmwareSSH`
 
@@ -210,5 +216,5 @@ If you are migrating from `:nerves_firmware_ssh`, or updating to `:nerves_pack
 
 * [X] Support public key authentication
 * [X] Support username/password authentication
-* [ ] Device generated server certificate and key
+* [X] Device generated server certificate and key
 * [ ] Device generated username/password
