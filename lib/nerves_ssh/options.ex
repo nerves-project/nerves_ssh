@@ -116,7 +116,7 @@ defmodule NervesSSH.Options do
   Load authorized keys from the authorized_keys file
   """
   @spec load_authorized_keys(t()) :: t()
-  def load_authorized_keys(opts) do
+  def load_authorized_keys(opts) when is_struct(opts) do
     case File.read(authorized_keys_path(opts)) do
       {:ok, str} ->
         from_file = String.split(str, "\n", trim: true)

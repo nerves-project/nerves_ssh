@@ -4,10 +4,17 @@ defmodule NervesSSH.OptionsTest do
 
   alias NervesSSH.Options
 
+  decode_fun =
+    if String.to_integer(System.otp_release()) >= 24 do
+      &:ssh_file.decode/2
+    else
+      &:public_key.ssh_decode/2
+    end
+
   @rsa_public_key String.trim(File.read!("test/fixtures/good_user_dir/id_rsa.pub"))
-  @rsa_public_key_decoded elem(hd(:public_key.ssh_decode(@rsa_public_key, :auth_keys)), 0)
+  @rsa_public_key_decoded elem(hd(decode_fun.(@rsa_public_key, :auth_keys)), 0)
   @ecdsa_public_key "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBK9UY+mjrTRdnO++HmV3TbSJkTkyR1tEqz0dITc3TD4l+WWIqvbOtUg2MN/Tg+bWtvD6aEX7/fjCGTxwe7BmaoI="
-  @ecdsa_public_key_decoded elem(hd(:public_key.ssh_decode(@ecdsa_public_key, :auth_keys)), 0)
+  @ecdsa_public_key_decoded elem(hd(decode_fun.(@ecdsa_public_key, :auth_keys)), 0)
 
   defp assert_options(got, expected) do
     for option <- expected do
