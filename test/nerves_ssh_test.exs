@@ -1,6 +1,13 @@
 defmodule NervesSshTest do
   use ExUnit.Case, async: true
 
+  decode_fun =
+    if String.to_integer(System.otp_release()) >= 24 do
+      &:ssh_file.decode/2
+    else
+      &:public_key.ssh_decode/2
+    end
+
   @username_login [
     user: 'test_user',
     password: 'password',
@@ -10,7 +17,7 @@ defmodule NervesSshTest do
   @base_ssh_port 4022
   @rsa_public_key String.trim(File.read!("test/fixtures/good_user_dir/id_rsa.pub"))
   @ed25519_public_key String.trim(File.read!("test/fixtures/good_user_dir/id_ed25519.pub"))
-  @ed25519_public_key_decoded elem(hd(:public_key.ssh_decode(@ed25519_public_key, :auth_keys)), 0)
+  @ed25519_public_key_decoded elem(hd(decode_fun.(@ed25519_public_key, :auth_keys)), 0)
 
   defp nerves_ssh_config() do
     NervesSSH.Options.with_defaults(
