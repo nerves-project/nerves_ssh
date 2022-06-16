@@ -27,6 +27,7 @@ defmodule NervesSSH.Options do
   @type language :: :elixir | :erlang | :lfe | :disabled
 
   @type t :: %__MODULE__{
+          name: any(),
           authorized_keys: [String.t()],
           decoded_authorized_keys: [:public_key.public_key()],
           user_passwords: [{String.t(), String.t()}],
@@ -40,7 +41,8 @@ defmodule NervesSSH.Options do
           daemon_option_overrides: keyword()
         }
 
-  defstruct authorized_keys: [],
+  defstruct name: :default,
+            authorized_keys: [],
             decoded_authorized_keys: [],
             user_passwords: [],
             port: 22,
@@ -233,7 +235,7 @@ defmodule NervesSSH.Options do
   defp exec_opts(%{exec: :lfe}), do: [exec: {:direct, &NervesSSH.Exec.run_lfe/1}]
   defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
 
-  defp key_cb_opts(_opts), do: [key_cb: NervesSSH.Keys]
+  defp key_cb_opts(opts), do: [key_cb: {NervesSSH.Keys, name: opts.name}]
 
   defp user_passwords_opts(opts) do
     passes =
@@ -241,7 +243,13 @@ defmodule NervesSSH.Options do
         {to_charlist(user), to_charlist(password)}
       end
 
-    [user_passwords: passes, pwdfun: &NervesSSH.UserPasswords.check/4]
+    [
+      user_passwords: passes,
+      # https://www.erlang.org/doc/man/ssh.html#type-pwdfun_4
+      pwdfun: fn user, password, peer_address, state ->
+        NervesSSH.UserPasswords.check(opts.name, user, password, peer_address, state)
+      end
+    ]
   end
 
   defp authentication_daemon_opts(opts) do

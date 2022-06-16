@@ -1,4 +1,4 @@
-defmodule NervesSshTest do
+defmodule NervesSSHTest do
   use ExUnit.Case, async: true
 
   decode_fun =
@@ -77,7 +77,7 @@ defmodule NervesSshTest do
     start_supervised!({NervesSSH, nerves_ssh_config()})
 
     # Test we can send SSH command
-    state = :sys.get_state(NervesSSH)
+    state = :sys.get_state({:via, Registry, {NervesSSH.Registry, :default}})
     assert {:ok, "2", 0} == ssh_run("1 + 1")
 
     # Simulate sshd failure. restart
@@ -85,41 +85,10 @@ defmodule NervesSshTest do
     Process.sleep(800)
 
     # Test recovery
-    new_state = :sys.get_state(NervesSSH)
+    new_state = :sys.get_state({:via, Registry, {NervesSSH.Registry, :default}})
     assert state.sshd != new_state.sshd
 
     assert {:ok, "4", 0} == ssh_run("2 + 2")
-  end
-
-  @tag :has_good_sshd_exec
-  test "stopping and starting the application" do
-    # The application is running, but without a config. Stop
-    # it, so that we can set a config and have it autostart.
-    assert :ok == Application.stop(:nerves_ssh)
-
-    Application.put_all_env([
-      {:nerves_ssh,
-       port: ssh_port(),
-       authorized_keys: [@rsa_public_key],
-       user_dir: Path.absname("test/fixtures/system_dir"),
-       system_dir: Path.absname("test/fixtures/system_dir")}
-    ])
-
-    assert :ok == Application.start(:nerves_ssh)
-    Process.sleep(25)
-    assert {:ok, ":started_once?", 0} == ssh_run(":started_once?")
-
-    assert :ok == Application.stop(:nerves_ssh)
-    Process.sleep(25)
-    assert {:error, :econnrefused} == ssh_run(":really_stopped?")
-
-    assert :ok == Application.start(:nerves_ssh)
-    Process.sleep(25)
-    assert {:ok, ":started_again?", 0} == ssh_run(":started_again?")
-
-    assert :ok == Application.stop(:nerves_ssh)
-    Application.put_all_env(nerves_ssh: [])
-    Process.sleep(25)
   end
 
   @tag :has_good_sshd_exec
@@ -290,5 +259,36 @@ defmodule NervesSshTest do
     assert {:ok, "2", 0} == ssh_run("1 + 1", login)
     NervesSSH.remove_user("#{login[:user]}")
     refute {:ok, "2", 0} == ssh_run("1 + 1", login)
+  end
+
+  @tag :has_good_sshd_exec
+  test "can start multiple named daemons" do
+    config = nerves_ssh_config()
+    other_config = Map.update!(config, :port, &(&1 + 1))
+    # start two servers, starting with identical configs, except the port
+    start_supervised!(Supervisor.child_spec({NervesSSH, {:daemon_a, config}}, id: :daemon_a))
+
+    start_supervised!(
+      Supervisor.child_spec({NervesSSH, {:daemon_b, other_config}}, id: :daemon_b)
+    )
+
+    assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
+
+    # login with username and password at :daemon_b
+    assert {:ok, "2", 0} ==
+             ssh_run("1 + 1", Keyword.put(@username_login, :port, other_config.port))
+
+    # try to login with other user that is only added later
+    refute {:ok, "2", 0} ==
+             ssh_run("1 + 1", port: other_config.port, user: 'jon', password: 'wat')
+
+    # add new user to :daemon_b
+    NervesSSH.add_user(:daemon_b, "jon", "wat")
+
+    assert {:ok, "2", 0} ==
+             ssh_run("1 + 1", port: other_config.port, user: 'jon', password: 'wat')
+
+    # :daemon_a must be unaffected
+    refute {:ok, "2", 0} == ssh_run("1 + 1", user: 'jon', password: 'wat')
   end
 end

@@ -11,8 +11,13 @@ defmodule NervesSSH.Keys do
   end
 
   @impl :ssh_server_key_api
-  def is_auth_key(key, _user, _options) do
+  def is_auth_key(key, _user, options) do
+    # https://www.erlang.org/doc/man/ssh_server_key_api.html#type-daemon_key_cb_options
+    name =
+      Keyword.fetch!(options, :key_cb_private)
+      |> Keyword.fetch!(:name)
+
     # If any of them match, then we're good.
-    Enum.member?(NervesSSH.configuration().decoded_authorized_keys, key)
+    Enum.member?(NervesSSH.configuration(name).decoded_authorized_keys, key)
   end
 end
