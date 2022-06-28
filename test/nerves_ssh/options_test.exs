@@ -26,11 +26,12 @@ defmodule NervesSSH.OptionsTest do
     opts = Options.new()
     daemon_options = Options.daemon_options(opts)
 
+    assert opts.system_dir == "/data/nerves_ssh"
+    assert opts.user_dir == "/data/nerves_ssh/default_user"
     assert opts.port == 22
 
     assert_options(daemon_options, [
       {:id_string, :random},
-      {:system_dir, '/data/nerves_ssh'},
       # {:shell, {Elixir.IEx, :start, [[dot_iex_path: @dot_iex_path]]}},
       # {:exec, &start_exec/3},
       {:subsystems, [:ssh_sftpd.subsystem_spec(cwd: '/')]},
@@ -245,5 +246,19 @@ defmodule NervesSSH.OptionsTest do
 
       assert File.exists?(Path.join(sys_dir, "ssh_host_rsa_key"))
     end
+  end
+
+  test "system and user dirs default to /tmp when not existing" do
+    sys = "/tmp/some-system"
+    user = "/tmp/some-user"
+    File.touch(sys)
+    File.touch(user)
+    opts = Options.new(system_dir: sys, user_dir: user)
+    daemon_options = Options.daemon_options(opts)
+
+    assert_options(daemon_options, [
+      {:system_dir, '/tmp/nerves_ssh/tmp/some-system'},
+      {:user_dir, '/tmp/nerves_ssh/tmp/some-user'}
+    ])
   end
 end

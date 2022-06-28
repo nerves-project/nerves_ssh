@@ -245,7 +245,20 @@ defmodule NervesSSH.Options do
   end
 
   defp authentication_daemon_opts(opts) do
-    [system_dir: to_charlist(opts.system_dir), user_dir: to_charlist(opts.user_dir)]
+    [system_dir: safe_dir(opts.system_dir), user_dir: safe_dir(opts.user_dir)]
+  end
+
+  defp safe_dir(dir) do
+    case File.mkdir_p(dir) do
+      :ok ->
+        to_charlist(dir)
+
+      {:error, err} ->
+        tmp = Path.join("/tmp/nerves_ssh", dir)
+        _ = File.mkdir_p(tmp)
+        Logger.warn("[NervesSSH] File error #{inspect(err)} for #{dir} - Using #{tmp}")
+        to_charlist(tmp)
+    end
   end
 
   defp subsystem_opts(opts) do
