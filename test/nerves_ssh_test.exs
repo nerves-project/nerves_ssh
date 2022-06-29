@@ -77,7 +77,7 @@ defmodule NervesSSHTest do
     start_supervised!({NervesSSH, nerves_ssh_config()})
 
     # Test we can send SSH command
-    state = :sys.get_state({:via, Registry, {NervesSSH.Registry, :default}})
+    state = :sys.get_state({:via, Registry, {NervesSSH.Registry, NervesSSH}})
     assert {:ok, "2", 0} == ssh_run("1 + 1")
 
     # Simulate sshd failure. restart
@@ -85,7 +85,7 @@ defmodule NervesSSHTest do
     Process.sleep(800)
 
     # Test recovery
-    new_state = :sys.get_state({:via, Registry, {NervesSSH.Registry, :default}})
+    new_state = :sys.get_state({:via, Registry, {NervesSSH.Registry, NervesSSH}})
     assert state.sshd != new_state.sshd
 
     assert {:ok, "4", 0} == ssh_run("2 + 2")
@@ -263,14 +263,12 @@ defmodule NervesSSHTest do
 
   @tag :has_good_sshd_exec
   test "can start multiple named daemons" do
-    config = nerves_ssh_config()
-    other_config = Map.update!(config, :port, &(&1 + 1))
+    config = nerves_ssh_config() |> Map.put(:name, :daemon_a)
+    other_config = %{config | name: :daemon_b, port: config.port + 1}
     # start two servers, starting with identical configs, except the port
-    start_supervised!(Supervisor.child_spec({NervesSSH, {:daemon_a, config}}, id: :daemon_a))
+    start_supervised!(Supervisor.child_spec({NervesSSH, config}, id: :daemon_a))
 
-    start_supervised!(
-      Supervisor.child_spec({NervesSSH, {:daemon_b, other_config}}, id: :daemon_b)
-    )
+    start_supervised!(Supervisor.child_spec({NervesSSH, other_config}, id: :daemon_b))
 
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
 

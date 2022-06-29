@@ -41,7 +41,7 @@ defmodule NervesSSH.Options do
           daemon_option_overrides: keyword()
         }
 
-  defstruct name: :default,
+  defstruct name: NervesSSH,
             authorized_keys: [],
             decoded_authorized_keys: [],
             user_passwords: [],

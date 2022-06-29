@@ -29,20 +29,16 @@ defmodule NervesSSH do
   defp via_name(name), do: {:via, Registry, {NervesSSH.Registry, name}}
 
   @doc false
-  @spec start_link(Options.t() | {atom(), Options.t()}) :: GenServer.on_start()
-  def start_link({name, %Options{} = opts}) do
-    GenServer.start_link(__MODULE__, %{opts | name: name}, name: via_name(name))
-  end
-
+  @spec start_link(Options.t()) :: GenServer.on_start()
   def start_link(%Options{} = opts) do
-    GenServer.start_link(__MODULE__, %{opts | name: :default}, name: via_name(:default))
+    GenServer.start_link(__MODULE__, opts, name: via_name(opts.name))
   end
 
   @doc """
   Read the configuration options
   """
   @spec configuration :: Options.t()
-  def configuration(name \\ :default) do
+  def configuration(name \\ NervesSSH) do
     GenServer.call(via_name(name), :configuration)
   end
 
@@ -52,7 +48,7 @@ defmodule NervesSSH do
   See [ssh.daemon_info/1](http://erlang.org/doc/man/ssh.html#daemon_info-1).
   """
   @spec info() :: {:ok, keyword()} | {:error, :bad_daemon_ref}
-  def info(name \\ :default) do
+  def info(name \\ NervesSSH) do
     GenServer.call(via_name(name), :info)
   end
 
@@ -62,7 +58,7 @@ defmodule NervesSSH do
   This will also attempt to save the key in `{USER_DIR}/authorized_keys`
   """
   @spec add_authorized_key(String.t()) :: :ok
-  def add_authorized_key(name \\ :default, key) when is_binary(key) do
+  def add_authorized_key(name \\ NervesSSH, key) when is_binary(key) do
     GenServer.call(via_name(name), {:add_authorized_key, key})
   end
 
@@ -72,7 +68,7 @@ defmodule NervesSSH do
   This will also attempt to remove the key in `{USER_DIR}/authorized_keys`
   """
   @spec remove_authorized_key(String.t()) :: :ok
-  def remove_authorized_key(name \\ :default, key) when is_binary(key) do
+  def remove_authorized_key(name \\ NervesSSH, key) when is_binary(key) do
     GenServer.call(via_name(name), {:remove_authorized_key, key})
   end
 
@@ -83,7 +79,7 @@ defmodule NervesSSH do
   authentication for this user
   """
   @spec add_user(String.t(), String.t() | nil) :: :ok
-  def add_user(name \\ :default, user, password) do
+  def add_user(name \\ NervesSSH, user, password) do
     GenServer.call(via_name(name), {:add_user, [user, password]})
   end
 
@@ -91,7 +87,7 @@ defmodule NervesSSH do
   Remove a user credential from the SSH daemon
   """
   @spec remove_user(String.t()) :: :ok
-  def remove_user(name \\ :default, user) do
+  def remove_user(name \\ NervesSSH, user) do
     GenServer.call(via_name(name), {:remove_user, [user]})
   end
 
