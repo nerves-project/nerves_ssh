@@ -30,7 +30,7 @@ defmodule NervesSSH.Application do
             []
 
           app_env ->
-            [{NervesSSH, {:default, Options.with_defaults(app_env)}}]
+            [{NervesSSH, Options.with_defaults(app_env)}]
         end
 
     opts = [strategy: :one_for_one, name: NervesSSH.Supervisor]
