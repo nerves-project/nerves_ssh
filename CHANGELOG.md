@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.4.0
+
+* New features
+  * `NervesSSH.Options` now supports a `:name` key to use when starting the
+    SSH daemon. This allows a user to run multiple SSH daemons on the same
+    device without name conflicts (thanks @SteffenDE)
+
+* Fixed
+  * The SSH daemon could fail to start if the system/user directories were bad
+    or if the file system was not ready/mounted to support writing to disk. In
+    those cases, NervesSSH now attempts to write to tmpfs at
+    `/tmp/nerves_ssh/<original path>` to help prevent the daemon from crashing
+
 ## v0.3.0
 
 `NervesSSH` now requires Elixir >= 1.10 and OTP >=23
