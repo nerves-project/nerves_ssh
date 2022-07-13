@@ -66,6 +66,8 @@ defmodule NervesSSH.SystemShellTest do
 
       _ ->
         receive_until_eof(acc)
+    after
+      5000 -> raise "timeout"
     end
   end
 

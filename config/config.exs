@@ -9,7 +9,9 @@ config :nerves_runtime,
 
 config :nerves_runtime, Nerves.Runtime.KV.Mock, %{"nerves_fw_devpath" => "/dev/will_not_work"}
 
-config :erlexec,
-  root: true,
-  user: "root",
-  limit_users: ["root"]
+if System.get_env("CI") == "true" or System.cmd("whoami", []) == {"root\n", 0} do
+  config :erlexec,
+    root: true,
+    user: "root",
+    limit_users: ["root"]
+end

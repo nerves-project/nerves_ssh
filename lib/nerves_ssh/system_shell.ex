@@ -86,23 +86,23 @@ defmodule NervesSSH.SystemShell do
       ) do
     case reason do
       :normal ->
-        :ssh_connection.exit_status(cm, cid, 0)
+        _ = :ssh_connection.exit_status(cm, cid, 0)
 
       {:exit_status, status} ->
-        :ssh_connection.exit_status(cm, cid, status)
+        _ = :ssh_connection.exit_status(cm, cid, status)
     end
 
-    :ssh_connection.send_eof(cm, cid)
+    _ = :ssh_connection.send_eof(cm, cid)
     {:stop, cid, state}
   end
 
   def handle_msg({:stdout, os_pid, data} = _msg, %{cm: cm, cid: cid, os_pid: os_pid} = state) do
-    :ssh_connection.send(cm, cid, data)
+    _ = :ssh_connection.send(cm, cid, data)
     {:ok, state}
   end
 
   def handle_msg({:stderr, os_pid, data} = _msg, %{cm: cm, cid: cid, os_pid: os_pid} = state) do
-    :ssh_connection.send(cm, cid, 1, data)
+    _ = :ssh_connection.send(cm, cid, 1, data)
     {:ok, state}
   end
 
@@ -114,7 +114,7 @@ defmodule NervesSSH.SystemShell do
   @impl true
   # client sent a pty request
   def handle_ssh_msg({:ssh_cm, cm, {:pty, cid, want_reply, pty_opts} = _msg}, %{cm: cm} = state) do
-    :ssh_connection.reply_request(cm, want_reply, :success, cid)
+    _ = :ssh_connection.reply_request(cm, want_reply, :success, cid)
 
     {:ok, %{state | pty_opts: pty_opts}}
   end
@@ -124,7 +124,7 @@ defmodule NervesSSH.SystemShell do
         {:ssh_cm, cm, {:env, cid, want_reply, key, value}},
         %{cm: cm, cid: cid} = state
       ) do
-    :ssh_connection.reply_request(cm, want_reply, :success, cid)
+    _ = :ssh_connection.reply_request(cm, want_reply, :success, cid)
 
     {:ok, update_in(state, [:env], fn vars -> [{key, value} | vars] end)}
   end
@@ -136,7 +136,7 @@ defmodule NervesSSH.SystemShell do
       )
       when is_list(command) do
     {:ok, pid, os_pid} = exec_command(List.to_string(command), state)
-    :ssh_connection.reply_request(cm, want_reply, :success, cid)
+    _ = :ssh_connection.reply_request(cm, want_reply, :success, cid)
     {:ok, %{state | os_pid: os_pid, port_pid: pid}}
   end
 
@@ -145,8 +145,8 @@ defmodule NervesSSH.SystemShell do
         {:ssh_cm, cm, {:shell, cid, want_reply} = _msg},
         %{cm: cm, cid: cid} = state
       ) do
-    {:ok, pid, os_pid} = exec_command(get_shell_command(), state)
-    :ssh_connection.reply_request(cm, want_reply, :success, cid)
+    {:ok, pid, os_pid} = exec_command(get_shell_command() |> Enum.map(&to_charlist/1), state)
+    _ = :ssh_connection.reply_request(cm, want_reply, :success, cid)
     {:ok, %{state | os_pid: os_pid, port_pid: pid}}
   end
 
@@ -154,7 +154,7 @@ defmodule NervesSSH.SystemShell do
         {:ssh_cm, _cm, {:data, channel_id, 0, data}},
         %{os_pid: os_pid, cid: channel_id} = state
       ) do
-    :exec.send(os_pid, data)
+    _ = :exec.send(os_pid, data)
 
     {:ok, state}
   end
@@ -179,7 +179,7 @@ defmodule NervesSSH.SystemShell do
         {:ssh_cm, cm, {:window_change, cid, width, height, _, _} = _msg},
         %{os_pid: os_pid, cm: cm, cid: cid} = state
       ) do
-    :exec.winsz(os_pid, height, width)
+    _ = :exec.winsz(os_pid, height, width)
 
     {:ok, state}
   end
@@ -244,23 +244,23 @@ defmodule NervesSSH.SystemShellSubsystem do
       ) do
     case reason do
       :normal ->
-        :ssh_connection.exit_status(cm, cid, 0)
+        _ = :ssh_connection.exit_status(cm, cid, 0)
 
       {:exit_status, status} ->
-        :ssh_connection.exit_status(cm, cid, status)
+        _ = :ssh_connection.exit_status(cm, cid, status)
     end
 
-    :ssh_connection.send_eof(cm, cid)
+    _ = :ssh_connection.send_eof(cm, cid)
     {:stop, cid, state}
   end
 
   def handle_msg({:stdout, os_pid, data}, %{os_pid: os_pid, cm: cm, cid: cid} = state) do
-    :ssh_connection.send(cm, cid, data)
+    _ = :ssh_connection.send(cm, cid, data)
     {:ok, state}
   end
 
   def handle_msg({:stderr, os_pid, data}, %{os_pid: os_pid, cm: cm, cid: cid} = state) do
-    :ssh_connection.send(cm, cid, 1, data)
+    _ = :ssh_connection.send(cm, cid, 1, data)
     {:ok, state}
   end
 
@@ -269,7 +269,7 @@ defmodule NervesSSH.SystemShellSubsystem do
         {:ssh_cm, cm, {:data, cid, 0, data}},
         %{os_pid: os_pid, cm: cm, cid: cid} = state
       ) do
-    :exec.send(os_pid, data)
+    _ = :exec.send(os_pid, data)
 
     {:ok, state}
   end
@@ -294,7 +294,7 @@ defmodule NervesSSH.SystemShellSubsystem do
         {:ssh_cm, cm, {:window_change, cid, width, height, _, _}},
         %{os_pid: os_pid, cm: cm, cid: cid} = state
       ) do
-    :exec.winsz(os_pid, height, width)
+    _ = :exec.winsz(os_pid, height, width)
 
     {:ok, state}
   end
