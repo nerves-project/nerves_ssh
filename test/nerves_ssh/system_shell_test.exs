@@ -52,7 +52,7 @@ defmodule NervesSSH.SystemShellTest do
     Process.get(:ssh_port)
   end
 
-  defp receive_until_eof do
+  defp receive_until_eof() do
     receive_until_eof([])
   end
 

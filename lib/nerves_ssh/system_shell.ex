@@ -113,7 +113,7 @@ defmodule NervesSSH.SystemShell do
 
   @impl true
   # client sent a pty request
-  def handle_ssh_msg({:ssh_cm, cm, {:pty, cid, want_reply, pty_opts} = _msg}, state = %{cm: cm}) do
+  def handle_ssh_msg({:ssh_cm, cm, {:pty, cid, want_reply, pty_opts} = _msg}, %{cm: cm} = state) do
     :ssh_connection.reply_request(cm, want_reply, :success, cid)
 
     {:ok, %{state | pty_opts: pty_opts}}
@@ -122,7 +122,7 @@ defmodule NervesSSH.SystemShell do
   # client wants to set an environment variable
   def handle_ssh_msg(
         {:ssh_cm, cm, {:env, cid, want_reply, key, value}},
-        state = %{cm: cm, cid: cid}
+        %{cm: cm, cid: cid} = state
       ) do
     :ssh_connection.reply_request(cm, want_reply, :success, cid)
 
@@ -143,7 +143,7 @@ defmodule NervesSSH.SystemShell do
   # client requested a shell
   def handle_ssh_msg(
         {:ssh_cm, cm, {:shell, cid, want_reply} = _msg},
-        state = %{cm: cm, cid: cid}
+        %{cm: cm, cid: cid} = state
       ) do
     {:ok, pid, os_pid} = exec_command(get_shell_command(), state)
     :ssh_connection.reply_request(cm, want_reply, :success, cid)
@@ -152,7 +152,7 @@ defmodule NervesSSH.SystemShell do
 
   def handle_ssh_msg(
         {:ssh_cm, _cm, {:data, channel_id, 0, data}},
-        state = %{os_pid: os_pid, cid: channel_id}
+        %{os_pid: os_pid, cid: channel_id} = state
       ) do
     :exec.send(os_pid, data)
 
@@ -177,7 +177,7 @@ defmodule NervesSSH.SystemShell do
 
   def handle_ssh_msg(
         {:ssh_cm, cm, {:window_change, cid, width, height, _, _} = _msg},
-        state = %{os_pid: os_pid, cm: cm, cid: cid}
+        %{os_pid: os_pid, cm: cm, cid: cid} = state
       ) do
     :exec.winsz(os_pid, height, width)
 
@@ -196,7 +196,7 @@ defmodule NervesSSH.SystemShell do
 end
 
 defmodule NervesSSH.SystemShellSubsystem do
-  # TODO: maybe merge this into the SystemShell module
+  # maybe merge this into the SystemShell module
   # but not sure yet if it's worth the effort
 
   @moduledoc false
@@ -267,7 +267,7 @@ defmodule NervesSSH.SystemShellSubsystem do
   @impl true
   def handle_ssh_msg(
         {:ssh_cm, cm, {:data, cid, 0, data}},
-        state = %{os_pid: os_pid, cm: cm, cid: cid}
+        %{os_pid: os_pid, cm: cm, cid: cid} = state
       ) do
     :exec.send(os_pid, data)
 
@@ -292,7 +292,7 @@ defmodule NervesSSH.SystemShellSubsystem do
 
   def handle_ssh_msg(
         {:ssh_cm, cm, {:window_change, cid, width, height, _, _}},
-        state = %{os_pid: os_pid, cm: cm, cid: cid}
+        %{os_pid: os_pid, cm: cm, cid: cid} = state
       ) do
     :exec.winsz(os_pid, height, width)
 
