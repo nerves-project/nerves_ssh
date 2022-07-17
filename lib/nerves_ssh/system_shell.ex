@@ -22,13 +22,22 @@ defmodule NervesSSH.SystemShellUtils do
     end
   end
 
-  def get_term({term, _, _, _, _, _}) when is_list(term),
+  # erlang pty_ch_msg contains the value of TERM
+  # https://www.erlang.org/doc/man/ssh_connection.html#type-pty_ch_msg
+  def get_term({term, _, _, _, _, _} = _pty_ch_msg) when is_list(term),
     do: [{"TERM", List.to_string(term)}]
 end
 
 defmodule NervesSSH.SystemShell do
   @moduledoc """
   A `:ssh_server_channel` that uses `:erlexec` to provide an interactive system shell.
+
+  > #### Warning {: .error}
+  >
+  > This module does not work when used as an SSH subsystem, as it expects to receive
+  > `pty`, `exec` / `shell` ssh messages that are not available when running as a subsystem.
+  > If you want to run a Unix shell in a subsystem, have a look at `NervesSSH.SystemShellSubsystem`
+  > instead.
   """
 
   @behaviour :ssh_server_channel
@@ -50,12 +59,10 @@ defmodule NervesSSH.SystemShell do
         nil ->
           base_opts ++ [:stderr]
 
-        {_term, _cols, _rows, _, _, opts} ->
+        {_term, cols, rows, _, _, opts} ->
           # https://www.erlang.org/doc/man/ssh_connection.html#type-pty_ch_msg
           # erlexec understands the format of the erlang ssh pty_ch_msg
-          base_opts ++ [{:stderr, :stdout}, {:pty, opts}]
-          # not yet released
-          # ++ [{:winsz, {rows, cols}}]
+          base_opts ++ [{:stderr, :stdout}, {:pty, opts}, {:winsz, {rows, cols}}]
       end
 
     :exec.run(cmd, opts)
@@ -199,7 +206,31 @@ defmodule NervesSSH.SystemShellSubsystem do
   # maybe merge this into the SystemShell module
   # but not sure yet if it's worth the effort
 
-  @moduledoc false
+  @moduledoc """
+  A `:ssh_server_channel` that uses `:erlexec` to provide an interactive system shell
+  running as an SSH subsystem.
+
+  ## Configuration
+
+  This module accepts a keywordlist for configuring it. Currently, the only supported
+  options are:
+
+  * `command` - the command to run when a client connects, defaults to the SHELL
+    environment variable or `sh`.
+  * `force_pty` - enables pseudoterminal allocation, defaults to `true`.
+
+  For example:
+
+  ```elixir
+  # config/target.exs
+  config :nerves_ssh,
+    subsystems: [
+      :ssh_sftpd.subsystem_spec(cwd: '/'),
+      {'shell', {NervesSSH.SystemShellSubsystem, [command: '/bin/cat', force_pty: false]}},
+    ],
+    # ...
+  ```
+  """
 
   @behaviour :ssh_server_channel
 
