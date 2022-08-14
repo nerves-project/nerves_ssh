@@ -56,7 +56,7 @@ defmodule NervesSSHTest do
 
   setup context do
     # Use unique ssh port numbers for each test to support async: true
-    Process.put(:ssh_port, @base_ssh_port + context.line)
+    Process.put(:ssh_port, @base_ssh_port + :erlang.phash2({context.module, context.test}, 10000))
     :ok
   end
 
