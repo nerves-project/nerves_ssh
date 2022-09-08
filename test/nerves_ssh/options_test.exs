@@ -42,6 +42,19 @@ defmodule NervesSSH.OptionsTest do
     assert map_size(key_cb_private[:host_keys]) > 0
   end
 
+  test "fwup subsystem can be changed" do
+    subsystem = {'fwup', {SSHSubsystemFwup, []}}
+
+    opts =
+      Options.with_defaults(
+        subsystems: [
+          subsystem
+        ]
+      )
+
+    assert opts.subsystems == [subsystem]
+  end
+
   test "Options.new/1 shows user dot_iex_path" do
     opts = Options.new(iex_opts: [dot_iex_path: "/my/iex.exs"])
     assert opts.iex_opts[:dot_iex_path] == "/my/iex.exs"

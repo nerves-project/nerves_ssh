@@ -75,7 +75,7 @@ defmodule NervesSSH.Options do
   def with_defaults(opts \\ []) do
     opts
     |> new()
-    |> add_fwup_subsystem()
+    |> maybe_add_fwup_subsystem()
     |> sanitize()
   end
 
@@ -302,11 +302,20 @@ defmodule NervesSSH.Options do
 
   defp valid_subsystem?(_), do: false
 
-  defp add_fwup_subsystem(opts) do
-    devpath = KV.get("nerves_fw_devpath")
+  defp maybe_add_fwup_subsystem(opts) do
+    found =
+      Enum.find(opts.subsystems, fn
+        {'fwup', _} -> true
+        _ -> false
+      end)
 
-    new_subsystems = [SSHSubsystemFwup.subsystem_spec(devpath: devpath) | opts.subsystems]
-    %{opts | subsystems: new_subsystems}
+    if found do
+      opts
+    else
+      devpath = KV.get("nerves_fw_devpath")
+      new_subsystems = [SSHSubsystemFwup.subsystem_spec(devpath: devpath) | opts.subsystems]
+      %{opts | subsystems: new_subsystems}
+    end
   end
 
   # :public_key.ssh_decode/2 was deprecated in OTP 24 and will be removed in OTP 26.
