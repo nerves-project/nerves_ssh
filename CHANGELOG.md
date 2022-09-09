@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.1
+
+* Fixed
+  * Default `SSHSubsystemFwup` config would overwrite any user defined config
+    preventing FWUP handling customization (thanks @ConnorRigby!)
+
 ## v0.4.0
 
 * New features
