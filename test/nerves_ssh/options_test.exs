@@ -1,6 +1,6 @@
 defmodule NervesSSH.OptionsTest do
   use ExUnit.Case
-  use Bitwise
+  import Bitwise
 
   alias NervesSSH.Options
 
