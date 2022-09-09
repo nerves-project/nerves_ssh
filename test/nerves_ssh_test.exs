@@ -144,7 +144,10 @@ defmodule NervesSSHTest do
 
     File.write!(download_path, "asdf")
 
-    {_output, 0} =
+    # SCP can sometimes return 1 even when it succeeds,
+    # so we'll just ignore the return here and rely on the file
+    # check below
+    _ =
       System.cmd("scp", [
         "-o",
         "UserKnownHostsFile /dev/null",
@@ -158,6 +161,7 @@ defmodule NervesSSHTest do
         "#{filename}"
       ])
 
+    assert File.exists?(filename)
     assert File.read!(filename) == "asdf"
   end
 
@@ -175,7 +179,10 @@ defmodule NervesSSHTest do
 
     File.write!(filename, "asdf")
 
-    {_output, 0} =
+    # SCP can sometimes return 1 even when it succeeds,
+    # so we'll just ignore the return here and rely on the file
+    # check below
+    _ =
       System.cmd("scp", [
         "-o",
         "UserKnownHostsFile /dev/null",
@@ -189,6 +196,7 @@ defmodule NervesSSHTest do
         "test_user@localhost:#{upload_path}"
       ])
 
+    assert File.exists?(upload_path)
     assert File.read!(upload_path) == "asdf"
   end
 
