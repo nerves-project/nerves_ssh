@@ -264,7 +264,7 @@ defmodule NervesSSH.Options do
       {:error, err} ->
         tmp = Path.join("/tmp/nerves_ssh", dir)
         _ = File.mkdir_p(tmp)
-        Logger.warn("[NervesSSH] File error #{inspect(err)} for #{dir} - Using #{tmp}")
+        Logger.warning("[NervesSSH] File error #{inspect(err)} for #{dir} - Using #{tmp}")
         to_charlist(tmp)
     end
   end
@@ -414,7 +414,7 @@ defmodule NervesSSH.Options do
       :ok
     else
       err ->
-        Logger.warn("""
+        Logger.warning("""
         [NervesSSH] Failed to write generated SSH host key to #{path} - #{inspect(err)}
 
         The SSH daemon wil continue to run and use the generated key, but a new host key
