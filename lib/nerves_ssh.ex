@@ -152,7 +152,7 @@ defmodule NervesSSH do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, _sshd, reason}, state) do
-    Logger.warn(
+    Logger.warning(
       "[NervesSSH] sshd #{inspect(state.sshd)} crashed: #{inspect(reason)}. Restarting after delay."
     )
 
@@ -177,7 +177,7 @@ defmodule NervesSSH do
         state
 
       error ->
-        Logger.warn("[NervesSSH] Failed to save authorized_keys file: #{inspect(error)}")
+        Logger.warning("[NervesSSH] Failed to save authorized_keys file: #{inspect(error)}")
         state
     end
   end

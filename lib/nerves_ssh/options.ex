@@ -46,7 +46,7 @@ defmodule NervesSSH.Options do
             decoded_authorized_keys: [],
             user_passwords: [],
             port: 22,
-            subsystems: [:ssh_sftpd.subsystem_spec(cwd: '/')],
+            subsystems: [:ssh_sftpd.subsystem_spec(cwd: ~c"/")],
             system_dir: "/data/nerves_ssh",
             user_dir: "/data/nerves_ssh/default_user",
             shell: :elixir,
@@ -264,7 +264,7 @@ defmodule NervesSSH.Options do
       {:error, err} ->
         tmp = Path.join("/tmp/nerves_ssh", dir)
         _ = File.mkdir_p(tmp)
-        Logger.warn("[NervesSSH] File error #{inspect(err)} for #{dir} - Using #{tmp}")
+        Logger.warning("[NervesSSH] File error #{inspect(err)} for #{dir} - Using #{tmp}")
         to_charlist(tmp)
     end
   end
@@ -305,7 +305,7 @@ defmodule NervesSSH.Options do
   defp maybe_add_fwup_subsystem(opts) do
     found =
       Enum.find(opts.subsystems, fn
-        {'fwup', _} -> true
+        {~c"fwup", _} -> true
         _ -> false
       end)
 
@@ -414,7 +414,7 @@ defmodule NervesSSH.Options do
       :ok
     else
       err ->
-        Logger.warn("""
+        Logger.warning("""
         [NervesSSH] Failed to write generated SSH host key to #{path} - #{inspect(err)}
 
         The SSH daemon wil continue to run and use the generated key, but a new host key
