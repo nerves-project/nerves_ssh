@@ -34,7 +34,7 @@ defmodule NervesSSH.OptionsTest do
       {:id_string, :random},
       # {:shell, {Elixir.IEx, :start, [[dot_iex_path: @dot_iex_path]]}},
       # {:exec, &start_exec/3},
-      {:subsystems, [:ssh_sftpd.subsystem_spec(cwd: '/')]},
+      {:subsystems, [:ssh_sftpd.subsystem_spec(cwd: ~c"/")]},
       {:inet, :inet6}
     ])
 
@@ -43,7 +43,7 @@ defmodule NervesSSH.OptionsTest do
   end
 
   test "fwup subsystem can be changed" do
-    subsystem = {'fwup', {SSHSubsystemFwup, []}}
+    subsystem = {~c"fwup", {SSHSubsystemFwup, []}}
 
     opts =
       Options.with_defaults(
@@ -104,7 +104,7 @@ defmodule NervesSSH.OptionsTest do
   end
 
   test "can save authorized_keys to file" do
-    user_dir = '/tmp/nerves_ssh/user_dir-#{:rand.uniform(1000)}'
+    user_dir = ~c"/tmp/nerves_ssh/user_dir-#{:rand.uniform(1000)}"
     authorized_keys = Path.join(user_dir, "authorized_keys")
     File.rm_rf!(user_dir)
     File.mkdir_p!(user_dir)
@@ -122,7 +122,7 @@ defmodule NervesSSH.OptionsTest do
     daemon_options = Options.daemon_options(opts)
 
     assert daemon_options[:user_passwords] ==
-             [{'alice', 'password'}, {'bob', '1234'}]
+             [{~c"alice", ~c"password"}, {~c"bob", ~c"1234"}]
   end
 
   test "adding user/password to options" do
@@ -183,7 +183,7 @@ defmodule NervesSSH.OptionsTest do
 
   describe "system host keys" do
     setup context do
-      sys_dir = '/tmp/nerves_ssh/sys_#{context.algorithm}-#{:rand.uniform(1000)}'
+      sys_dir = ~c"/tmp/nerves_ssh/sys_#{context.algorithm}-#{:rand.uniform(1000)}"
       File.rm_rf!(sys_dir)
       File.mkdir_p!(sys_dir)
       on_exit(fn -> File.rm_rf!(sys_dir) end)
@@ -270,8 +270,8 @@ defmodule NervesSSH.OptionsTest do
     daemon_options = Options.daemon_options(opts)
 
     assert_options(daemon_options, [
-      {:system_dir, '/tmp/nerves_ssh/tmp/some-system'},
-      {:user_dir, '/tmp/nerves_ssh/tmp/some-user'}
+      {:system_dir, ~c"/tmp/nerves_ssh/tmp/some-system"},
+      {:user_dir, ~c"/tmp/nerves_ssh/tmp/some-user"}
     ])
   end
 end

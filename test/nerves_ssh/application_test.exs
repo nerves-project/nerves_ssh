@@ -7,13 +7,13 @@ defmodule NervesSSH.ApplicationTest do
 
   defp ssh_run(cmd) do
     ssh_options = [
-      ip: '127.0.0.1',
+      ip: ~c"127.0.0.1",
       port: 2222,
       user_interaction: false,
       silently_accept_hosts: true,
       save_accepted_host: false,
-      user: 'test_user',
-      password: 'password',
+      user: ~c"test_user",
+      password: ~c"password",
       user_dir: Path.absname("test/fixtures/good_user_dir")
     ]
 
