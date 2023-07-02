@@ -32,8 +32,12 @@ defmodule NervesSSH.Exec do
   """
   @spec run_lfe(charlist()) :: {:ok, iolist()} | {:error, binary()}
   def run_lfe(cmd) do
-    {value, _} = :lfe_shell.run_string(cmd)
-    {:ok, :lfe_io.prettyprint1(value, 30)}
+    # Apply is used here since LFE is an optional dependency and we don't want
+    # compiler warnings when it's not being used
+    #
+    # credo:disable-for-lines:2
+    {value, _} = apply(:lfe_shell, :run_string, [cmd])
+    {:ok, apply(:lfe_io, :prettyprint1, [value, 30])}
   catch
     kind, value ->
       {:error, Exception.format(kind, value, __STACKTRACE__)}
