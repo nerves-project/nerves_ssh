@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.2
+
+* Fixed
+  * Fix all compiler warnings and deprecations with Elixir 1.15
+
 ## v0.4.1
 
 * Fixed
