@@ -77,7 +77,7 @@ defmodule NervesSSHTest do
     start_supervised!({NervesSSH, nerves_ssh_config()})
 
     # Test we can send SSH command
-    state = :sys.get_state({:via, Registry, {NervesSSH.Registry, NervesSSH}})
+    state = :sys.get_state(NervesSSH)
     assert {:ok, "2", 0} == ssh_run("1 + 1")
 
     # Simulate sshd failure. restart
@@ -85,7 +85,7 @@ defmodule NervesSSHTest do
     Process.sleep(800)
 
     # Test recovery
-    new_state = :sys.get_state({:via, Registry, {NervesSSH.Registry, NervesSSH}})
+    new_state = :sys.get_state(NervesSSH)
     assert state.sshd != new_state.sshd
 
     assert {:ok, "4", 0} == ssh_run("2 + 2")
