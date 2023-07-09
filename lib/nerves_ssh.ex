@@ -52,7 +52,16 @@ defmodule NervesSSH do
   @doc """
   Add an SSH public key to the authorized keys
 
-  This will also attempt to save the key in `{USER_DIR}/authorized_keys`
+  This also persists the key to `{USER_DIR}/authorized_keys` so that it can be
+  used after restarting.
+
+  Call `configuration/0` to get the current list of authorized keys.
+
+  Example:
+
+  ```
+  iex> NervesSSH.add_authorized_key("ssh-ed25519 AAAAC3NzaC...")
+  ```
   """
   @spec add_authorized_key(GenServer.name(), String.t()) :: :ok
   def add_authorized_key(name \\ @default_name, key) when is_binary(key) do
@@ -62,7 +71,9 @@ defmodule NervesSSH do
   @doc """
   Remove an SSH public key from the authorized keys
 
-  This will also attempt to remove the key in `{USER_DIR}/authorized_keys`
+  This looks for an exact match. Call `configuration/0` to get the list of
+  authorized keys to find those to remove. The `{USER_DIR}/authorized_keys`
+  will be updated to save the change.
   """
   @spec remove_authorized_key(GenServer.name(), String.t()) :: :ok
   def remove_authorized_key(name \\ @default_name, key) when is_binary(key) do
