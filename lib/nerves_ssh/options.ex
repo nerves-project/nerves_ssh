@@ -14,7 +14,7 @@ defmodule NervesSSH.Options do
   * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:iex_opts` - additional options to use when starting up IEx
   * `:user_passwords` - a list of username/password tuples (stored in the clear!)
-  * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked.
+  * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked. Be careful using this since it can break other options.
   """
 
   alias Nerves.Runtime.KV
