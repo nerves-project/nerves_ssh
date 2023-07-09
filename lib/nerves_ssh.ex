@@ -91,7 +91,7 @@ defmodule NervesSSH do
     GenServer.call(via_name(name), {:remove_user, [user]})
   end
 
-  @impl true
+  @impl GenServer
   def init(opts) do
     # Make sure we can attempt SSH daemon cleanup if
     # NervesSSH application gets shutdown
@@ -100,7 +100,7 @@ defmodule NervesSSH do
     {:ok, %State{opts: opts}, {:continue, :start_daemon}}
   end
 
-  @impl true
+  @impl GenServer
   def handle_continue(:start_daemon, state) do
     state =
       update_in(state.opts, &Options.load_authorized_keys/1)
@@ -126,7 +126,7 @@ defmodule NervesSSH do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_call(:configuration, _from, state) do
     {:reply, state.opts, state}
   end
@@ -150,7 +150,7 @@ defmodule NervesSSH do
     {:reply, :ok, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_info({:DOWN, _ref, :process, _sshd, reason}, state) do
     Logger.warning(
       "[NervesSSH] sshd #{inspect(state.sshd)} crashed: #{inspect(reason)}. Restarting after delay."
@@ -161,7 +161,7 @@ defmodule NervesSSH do
     {:stop, {:ssh_crashed, reason}, state}
   end
 
-  @impl true
+  @impl GenServer
   def terminate(reason, state) do
     Logger.error("[NervesSSH] terminating with reason: #{inspect(reason)}")
 
