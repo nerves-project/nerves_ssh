@@ -117,12 +117,11 @@ defmodule NervesSSH.OptionsTest do
     assert String.contains?(File.read!(authorized_keys), @rsa_public_key)
   end
 
-  test "username/passwords are turned into charlists" do
+  test "username/passwords turn on the pwdfun option" do
     opts = Options.new(user_passwords: [{"alice", "password"}, {"bob", "1234"}])
     daemon_options = Options.daemon_options(opts)
 
-    assert daemon_options[:user_passwords] ==
-             [{~c"alice", ~c"password"}, {~c"bob", ~c"1234"}]
+    assert daemon_options[:pwdfun]
   end
 
   test "adding user/password to options" do

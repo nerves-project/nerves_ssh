@@ -239,13 +239,7 @@ defmodule NervesSSH.Options do
   defp key_cb_opts(opts), do: [key_cb: {NervesSSH.Keys, name: opts.name}]
 
   defp user_passwords_opts(opts) do
-    passes =
-      for {user, password} <- opts.user_passwords do
-        {to_charlist(user), to_charlist(password)}
-      end
-
     [
-      user_passwords: passes,
       # https://www.erlang.org/doc/man/ssh.html#type-pwdfun_4
       pwdfun: fn user, password, peer_address, state ->
         NervesSSH.UserPasswords.check(opts.name, user, password, peer_address, state)
