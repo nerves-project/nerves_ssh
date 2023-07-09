@@ -89,7 +89,8 @@ NervesSSH supports the following configuration items:
   `:erlang`, `lfe`, or `:disabled`). Defaults to `:elixir`.
 * `:iex_opts` - additional options to use when starting up IEx
 * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`.
-  These take precedence and are unchecked.
+  These take precedence and are unchecked. Be careful using this since it can
+  break other options.
 
 ### SSH host keys
 
