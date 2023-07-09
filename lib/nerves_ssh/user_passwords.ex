@@ -9,7 +9,7 @@ defmodule NervesSSH.UserPasswords do
   require Logger
 
   @spec check(
-          name :: any(),
+          name :: GenServer.name(),
           :erlang.string(),
           :erlang.string(),
           :ssh.ip_port(),
