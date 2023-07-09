@@ -15,16 +15,13 @@ defmodule NervesSSH do
 
   @dialyzer [{:no_opaque, handle_continue: 2}]
 
-  defmodule State do
-    @moduledoc false
-    @type t :: %__MODULE__{
-            opts: Options.t(),
-            sshd: pid(),
-            sshd_ref: reference()
-          }
-
-    defstruct opts: [], sshd: nil, sshd_ref: nil
-  end
+  @typedoc false
+  @type state :: %__MODULE__{
+          opts: Options.t(),
+          sshd: pid(),
+          sshd_ref: reference()
+        }
+  defstruct opts: [], sshd: nil, sshd_ref: nil
 
   defp via_name(name), do: {:via, Registry, {NervesSSH.Registry, name}}
 
@@ -97,7 +94,7 @@ defmodule NervesSSH do
     # NervesSSH application gets shutdown
     Process.flag(:trap_exit, true)
 
-    {:ok, %State{opts: opts}, {:continue, :start_daemon}}
+    {:ok, %__MODULE__{opts: opts}, {:continue, :start_daemon}}
   end
 
   @impl GenServer
