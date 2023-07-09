@@ -4,6 +4,7 @@ defmodule NervesSSH.Options do
 
   The following fields are available:
 
+  * `:name` - a name used to reference the SSH daemon when running multiple daemons. Defaults to `NervesSSH`.
   * `:authorized_keys` - a list of SSH authorized key file string
   * `:port` - the TCP port to use for the SSH daemon. Defaults to `22`.
   * `:subsystems` - a list of [SSH subsystems specs](https://erlang.org/doc/man/ssh.html#type-subsystem_spec) to start. Defaults to SFTP and `ssh_subsystem_fwup`
@@ -27,7 +28,7 @@ defmodule NervesSSH.Options do
   @type language :: :elixir | :erlang | :lfe | :disabled
 
   @type t :: %__MODULE__{
-          name: any(),
+          name: NervesSSH.name(),
           authorized_keys: [String.t()],
           decoded_authorized_keys: [:public_key.public_key()],
           user_passwords: [{String.t(), String.t()}],
