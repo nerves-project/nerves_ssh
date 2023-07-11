@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.4.3
+
+This release is almost entirely code cleanup and improved documentation.
+The only notable change is you now must use atoms or module names for the
+`:name` option with daemon processes.
+
+* Updated
+  * Remove registry and rely on GenServer name registration
+  * Excluded unused `:user_passwords` key when `:pwdfun` is used
+
 ## v0.4.2
 
 * Fixed
