@@ -21,10 +21,10 @@ defmodule NervesSSH.UserPasswords do
   def check(name, user, pwd, ip_port, attempt) do
     attempt = attempt + 1
 
-    is_authorized?(name, user, pwd) || maybe_disconnect(attempt, user, ip_port)
+    authorized?(name, user, pwd) || maybe_disconnect(attempt, user, ip_port)
   end
 
-  defp is_authorized?(name, user, pwd) do
+  defp authorized?(name, user, pwd) do
     NervesSSH.configuration(name).user_passwords
     |> Enum.find_value(false, fn {u, p} ->
       "#{u}" == "#{user}" and "#{p}" == "#{pwd}"
