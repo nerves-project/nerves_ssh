@@ -83,22 +83,22 @@ defmodule NervesSSH.SCP do
     end
   end
 
-  def streamfile_download(path, chunk_size \\ 4096) do
+  defp streamfile_download(path, chunk_size \\ 4096) do
     path
-    |> File.stream!([], chunk_size)
+    |> filestream!(chunk_size)
     |> Stream.into(IO.binstream(:stdio, chunk_size))
     |> Stream.run()
   end
 
-  def streamfile_upload(path, file_size, chunk_size \\ 4096)
+  defp streamfile_upload(path, file_size, chunk_size \\ 4096)
 
-  def streamfile_upload(path, file_size, chunk_size) when file_size >= chunk_size do
+  defp streamfile_upload(path, file_size, chunk_size) when file_size >= chunk_size do
     num_chunks = round(file_size / chunk_size)
     process_upload_chunks(path, chunk_size, num_chunks)
     complete_stream_upload(path, file_size - chunk_size * num_chunks, chunk_size)
   end
 
-  def streamfile_upload(path, file_size, chunk_size) when file_size < chunk_size do
+  defp streamfile_upload(path, file_size, chunk_size) when file_size < chunk_size do
     complete_stream_upload(path, file_size, chunk_size)
   end
 
@@ -113,7 +113,7 @@ defmodule NervesSSH.SCP do
 
   defp process_upload_chunks(path, chunk_size, chunks) do
     IO.binstream(:stdio, chunk_size)
-    |> Stream.into(File.stream!(path, [], chunk_size))
+    |> Stream.into(filestream!(path, chunk_size))
     |> Stream.take(chunks)
     |> Stream.run()
   end
@@ -164,5 +164,11 @@ defmodule NervesSSH.SCP do
     else
       {:ok, dest_path}
     end
+  end
+
+  if Version.match?(System.version(), ">= 1.16.0") do
+    defp filestream!(path, chunk_size), do: File.stream!(path, chunk_size)
+  else
+    defp filestream!(path, chunk_size), do: File.stream!(path, [], chunk_size)
   end
 end
