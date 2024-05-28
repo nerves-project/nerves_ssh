@@ -224,8 +224,13 @@ defmodule NervesSSH.Options do
     ]
   end
 
-  defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
-    do: [{:shell, {Elixir.IEx, :start, [iex_opts]}}]
+  if Version.match?(System.version(), ">= 1.17.0") do
+    defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
+      do: [{:shell, {:iex, :start, [iex_opts, {:elixir_utils, :noop, []}]}}]
+  else
+    defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
+      do: [{:shell, {Elixir.IEx, :start, [iex_opts]}}]
+  end
 
   defp shell_opts(%{shell: :erlang}), do: []
   defp shell_opts(%{shell: :lfe}), do: [{:shell, {:lfe_shell, :start, []}}]
