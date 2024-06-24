@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.0
+
+This release adds support for Elixir 1.17 and removes support for Elixir 1.12
+and earlier. It has no other functional differences with v0.4.3.
+
 ## v0.4.3
 
 This release is almost entirely code cleanup and improved documentation.
