@@ -19,7 +19,8 @@ defmodule NervesSSH.MixProject do
         docs: :docs,
         "hex.publish": :docs,
         "hex.build": :docs,
-        credo: :test
+        credo: :test,
+        dialyzer: :dialyzer
       }
     ]
   end
@@ -33,7 +34,7 @@ defmodule NervesSSH.MixProject do
 
   defp deps do
     [
-      {:dialyxir, "~> 1.4.0", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.4", only: :dialyzer, runtime: false},
       {:ex_doc, "~> 0.22", only: :docs, runtime: false},
       {:ssh_subsystem_fwup, "~> 0.5"},
       {:nerves_runtime, "~> 0.11"},
@@ -52,8 +53,7 @@ defmodule NervesSSH.MixProject do
 
   defp dialyzer() do
     [
-      flags: [:missing_return, :extra_return, :unmatched_returns, :error_handling, :underspecs],
-      plt_add_apps: [:lfe]
+      flags: [:missing_return, :extra_return, :unmatched_returns, :error_handling, :underspecs]
     ]
   end
 
