@@ -22,8 +22,13 @@ defmodule NervesSSH.Options do
   require Logger
 
   @otp System.otp_release() |> Integer.parse() |> elem(0)
-
   if @otp < 23, do: raise("NervesSSH requires OTP 23 or higher")
+
+  if Version.match?(System.version(), ">= 1.18.0") do
+    @dot_iex_option :dot_iex
+  else
+    @dot_iex_option :dot_iex_path
+  end
 
   @type language :: :elixir | :erlang | :lfe | :disabled
 
@@ -52,7 +57,7 @@ defmodule NervesSSH.Options do
             user_dir: "/data/nerves_ssh/default_user",
             shell: :elixir,
             exec: :elixir,
-            iex_opts: [dot_iex_path: Path.expand(".iex.exs")],
+            iex_opts: [{@dot_iex_option, Path.expand(".iex.exs")}],
             daemon_option_overrides: []
 
   @doc """
@@ -282,14 +287,20 @@ defmodule NervesSSH.Options do
   @spec sanitize(t()) :: t()
   def sanitize(opts) do
     safe_subsystems = Enum.filter(opts.subsystems, &valid_subsystem?/1)
-    safe_dot_iex_path = validate_dot_iex_path(opts.iex_opts[:dot_iex_path])
-    iex_opts = Keyword.put(opts.iex_opts, :dot_iex_path, safe_dot_iex_path)
+
+    # Normalizes :dot_iex or :dot_iex_path usage to match Elixir version
+    safe_dot_iex = validate_dot_iex(opts.iex_opts[:dot_iex] || opts.iex_opts[:dot_iex_path])
+
+    iex_opts =
+      opts.iex_opts
+      |> Keyword.drop([:dot_iex, :dot_iex_path])
+      |> Keyword.put(@dot_iex_option, safe_dot_iex)
 
     %__MODULE__{opts | subsystems: safe_subsystems, iex_opts: iex_opts}
   end
 
-  defp validate_dot_iex_path(dot_iex_path) do
-    [dot_iex_path, ".iex.exs", "~/.iex.exs", "/etc/iex.exs"]
+  defp validate_dot_iex(path) do
+    [path, ".iex.exs", "~/.iex.exs", "/etc/iex.exs"]
     |> Enum.filter(&is_binary/1)
     |> Enum.map(&Path.expand/1)
     |> Enum.find("", &File.regular?/1)

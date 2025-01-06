@@ -55,9 +55,9 @@ defmodule NervesSSH.OptionsTest do
     assert opts.subsystems == [subsystem]
   end
 
-  test "Options.new/1 shows user dot_iex_path" do
-    opts = Options.new(iex_opts: [dot_iex_path: "/my/iex.exs"])
-    assert opts.iex_opts[:dot_iex_path] == "/my/iex.exs"
+  test "Options.new/1 shows user dot_iex" do
+    opts = Options.new(iex_opts: [dot_iex: "/my/iex.exs"])
+    assert opts.iex_opts[:dot_iex] == "/my/iex.exs"
   end
 
   test "authorized keys passed individually" do
@@ -172,6 +172,27 @@ defmodule NervesSSH.OptionsTest do
     opts = Options.new(subsystems: ["hello"]) |> Options.sanitize()
     daemon_options = Options.daemon_options(opts)
     assert daemon_options[:subsystems] == []
+  end
+
+  test "sanitizing dot_iex" do
+    # CI will try multiple Elixir versions. Check that correct `:dot_iex`/`:dot_iex_path` option is
+    # used regardless to what was specified in the config.
+    {good_opt, bad_opt} =
+      if Version.match?(System.version(), ">= 1.18.0"),
+        do: {:dot_iex, :dot_iex_path},
+        else: {:dot_iex_path, :dot_iex}
+
+    dot_iex_path = Path.expand("test/fixtures/iex.exs")
+
+    # Try specifying the option one way
+    opts = Options.new(iex_opts: [dot_iex: dot_iex_path]) |> Options.sanitize()
+    assert opts.iex_opts[good_opt] == dot_iex_path
+    assert opts.iex_opts[bad_opt] == nil
+
+    # Try the other way
+    opts = Options.new(iex_opts: [dot_iex_path: dot_iex_path]) |> Options.sanitize()
+    assert opts.iex_opts[good_opt] == dot_iex_path
+    assert opts.iex_opts[bad_opt] == nil
   end
 
   test "defaults don't need sanitization" do
