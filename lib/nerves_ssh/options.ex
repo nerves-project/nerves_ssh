@@ -290,7 +290,7 @@ defmodule NervesSSH.Options do
 
   defp validate_dot_iex_path(dot_iex_path) do
     [dot_iex_path, ".iex.exs", "~/.iex.exs", "/etc/iex.exs"]
-    |> Enum.filter(&is_bitstring/1)
+    |> Enum.filter(&is_binary/1)
     |> Enum.map(&Path.expand/1)
     |> Enum.find("", &File.regular?/1)
   end
