@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.1
+
+This release adds support for Elixir 1.18.
+
+* Fixes
+  * Automatically specify or adjust IEx's `:dot_iex` option depending on the
+    Elixir version. No changes to user code is needed, but once you upgrade to
+    Elixir 1.18, if you're specifying a custom `:dot_iex_path` (unlikely), you
+    should update it.
+
 ## v1.0.0
 
 This release adds support for Elixir 1.17 and removes support for Elixir 1.12
