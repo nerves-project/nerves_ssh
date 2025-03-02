@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Frank Hunleth
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 otp_version = System.otp_release() |> Integer.parse() |> elem(0)
 
 # The OTP ssh exec option is only documented for OTP 23 and later. The undocumented version

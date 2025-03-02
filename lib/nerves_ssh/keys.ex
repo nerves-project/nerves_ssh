@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2020 Jon Carstens
+# SPDX-FileCopyrightText: 2022 Steffen Deusch
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesSSH.Keys do
   @moduledoc false
   @behaviour :ssh_server_key_api

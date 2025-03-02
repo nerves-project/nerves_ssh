@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2020 Frank Hunleth
+# SPDX-FileCopyrightText: 2020 Jon Carstens
+# SPDX-FileCopyrightText: 2022 Connor Rigby
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesSSH.OptionsTest do
   use ExUnit.Case
   import Bitwise

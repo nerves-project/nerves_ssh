@@ -1,0 +1,44 @@
+version = 1
+
+[[annotations]]
+path = [
+ ".circleci/config.yml",
+ ".credo.exs",
+ ".formatter.exs",
+ ".github/dependabot.yml",
+ ".gitignore",
+ ".iex.exs",
+ "CHANGELOG.md",
+ "NOTICE",
+ "REUSE.toml",
+ "mix.exs",
+ "mix.lock"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "None"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = [
+ "README.md"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2020 Frank Hunleth"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = [
+ "test/fixtures/bad_user_dir/.empty",
+ "test/fixtures/good_user_dir/id_ed25519",
+ "test/fixtures/good_user_dir/id_ed25519.pub",
+ "test/fixtures/good_user_dir/id_rsa",
+ "test/fixtures/good_user_dir/id_rsa.pub",
+ "test/fixtures/iex.exs",
+ "test/fixtures/system_dir/authorized_keys",
+ "test/fixtures/system_dir/ssh_host_ed25519_key",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "None"
+SPDX-License-Identifier = "CC0-1.0"
+
+

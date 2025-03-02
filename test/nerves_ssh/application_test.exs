@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2022 Steffen Deusch
+# SPDX-FileCopyrightText: 2023 Frank Hunleth
+# SPDX-FileCopyrightText: 2023 Jon Carstens
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesSSH.ApplicationTest do
   # These tests modify the global application environment so they can't be run concurrently
   use ExUnit.Case, async: false

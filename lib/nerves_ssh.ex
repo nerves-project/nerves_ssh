@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2020 Frank Hunleth
+# SPDX-FileCopyrightText: 2020 Jon Carstens
+# SPDX-FileCopyrightText: 2022 Steffen Deusch
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesSSH do
   @moduledoc File.read!("README.md")
              |> String.split("## Usage")

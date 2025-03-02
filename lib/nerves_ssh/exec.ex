@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2020 Frank Hunleth
+# SPDX-FileCopyrightText: 2021 Connor Rigby
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesSSH.Exec do
   @moduledoc """
   This module contains helper methods for running commands over SSH

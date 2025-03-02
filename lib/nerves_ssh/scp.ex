@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2020 Frank Hunleth
+# SPDX-FileCopyrightText: 2024 Jon Carstens
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesSSH.SCP do
   @moduledoc false
 

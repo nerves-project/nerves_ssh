@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2022 Jon Carstens
+# SPDX-FileCopyrightText: 2022 Steffen Deusch
+# SPDX-FileCopyrightText: 2023 Frank Hunleth
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesSSH.UserPasswords do
   @moduledoc """
   Default module used for checking User/Password combinations
