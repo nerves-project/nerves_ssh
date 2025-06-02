@@ -300,4 +300,27 @@ defmodule NervesSSH.OptionsTest do
       {:user_dir, ~c"/tmp/nerves_ssh/tmp/some-user"}
     ])
   end
+
+  test "add/remove subsystems" do
+    opts = Options.new()
+
+    # Add a subsystem
+    sftp_subsystem = {~c"sftp", {:ssh_sftpd, [cwd: ~c"/"]}}
+    opts = Options.add_subsystem(opts, sftp_subsystem)
+    assert opts.subsystems == [sftp_subsystem]
+
+    # Add with different options
+    sftp_subsystem = {~c"sftp", {:ssh_sftpd, [cwd: ~c"/tmp"]}}
+    opts = Options.add_subsystem(opts, sftp_subsystem)
+    assert opts.subsystems == [sftp_subsystem]
+
+    # Add a different subsystem
+    fwup_subsystem = {~c"fwup", SSHSubsystemFwup.subsystem_spec()}
+    opts = Options.add_subsystem(opts, fwup_subsystem)
+    assert opts.subsystems == [fwup_subsystem, sftp_subsystem]
+
+    # Remove a subsystem
+    opts = Options.remove_subsystem(opts, ~c"sftp")
+    assert opts.subsystems == [fwup_subsystem]
+  end
 end
