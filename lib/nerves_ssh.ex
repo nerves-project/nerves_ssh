@@ -105,6 +105,24 @@ defmodule NervesSSH do
     GenServer.call(name, {:remove_user, [user]})
   end
 
+  @doc """
+  Add a subsystem to the SSH daemon
+
+  If a subsystem with the same name already exists, it will be replaced.
+  """
+  @spec add_subsystem(GenServer.name(), :ssh.subsystem_spec()) :: :ok | {:error, term()}
+  def add_subsystem(name \\ @default_name, subsystem_spec) do
+    GenServer.call(name, {:add_subsystem, subsystem_spec})
+  end
+
+  @doc """
+  Remove a subsystem from the SSH daemon
+  """
+  @spec remove_subsystem(GenServer.name(), charlist()) :: :ok | {:error, term()}
+  def remove_subsystem(name \\ @default_name, subsystem_name) do
+    GenServer.call(name, {:remove_subsystem, subsystem_name})
+  end
+
   @impl GenServer
   def init(opts) do
     # Make sure we can attempt SSH daemon cleanup if
@@ -147,6 +165,21 @@ defmodule NervesSSH do
 
   def handle_call(:info, _from, state) do
     {:reply, :ssh.daemon_info(state.sshd), state}
+  end
+
+  def handle_call({fun, val}, _from, state) when fun in [:add_subsystem, :remove_subsystem] do
+    new_state = update_in(state.opts, &apply(Options, fun, [&1, val]))
+    daemon_options = Options.daemon_options(new_state.opts)
+
+    case :ssh.daemon_replace_options(state.sshd, daemon_options) do
+      {:ok, _} ->
+        {:reply, :ok, new_state}
+
+      {:error, reason} ->
+        Logger.error("[NervesSSH] Failed to update daemon options: #{inspect(reason)}")
+        # Keep old state if the update fails to avoid persisting bad options
+        {:reply, {:error, reason}, state}
+    end
   end
 
   def handle_call({fun, key}, _from, state)

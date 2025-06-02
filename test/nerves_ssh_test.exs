@@ -38,7 +38,7 @@ defmodule NervesSSHTest do
     )
   end
 
-  defp ssh_run(cmd, options \\ @username_login) do
+  defp ssh_connect(options \\ @username_login) do
     ssh_options =
       [
         ip: ~c"127.0.0.1",
@@ -52,7 +52,11 @@ defmodule NervesSSHTest do
     # Short sleep to make sure server is up an running
     Process.sleep(200)
 
-    with {:ok, conn} <- SSHEx.connect(ssh_options) do
+    SSHEx.connect(ssh_options)
+  end
+
+  defp ssh_run(cmd, options \\ @username_login) do
+    with {:ok, conn} <- ssh_connect(options) do
       SSHEx.run(conn, cmd)
     end
   end
@@ -303,5 +307,40 @@ defmodule NervesSSHTest do
 
     # :daemon_a must be unaffected
     refute {:ok, "2", 0} == ssh_run("1 + 1", user: ~c"jon", password: ~c"wat")
+  end
+
+  @tag :has_good_sshd_exec
+  test "can add and remove subsystems at runtime" do
+    start_supervised!({NervesSSH, nerves_ssh_config()})
+
+    assert [{~c"fwup", _}, {~c"sftp", _}] = NervesSSH.configuration().subsystems
+
+    # Add a subsystem
+    assert :ok == NervesSSH.add_subsystem({~c"echo", {Support.EchoSubsystem, []}})
+
+    assert {:ok, conn} = ssh_connect()
+    assert {:ok, ch} = :ssh_connection.session_channel(conn, 5000)
+    assert :success = :ssh_connection.subsystem(conn, ch, ~c"echo", 5000)
+    :ssh_connection.send(conn, ch, 0, "hello, world")
+    assert_receive {:ssh_cm, _, {:data, _, _, "hello, world"}}
+    :ssh.close(conn)
+
+    # Replace the subsystem with new options
+    assert :ok ==
+             NervesSSH.add_subsystem({~c"echo", {Support.EchoSubsystem, [prefix: "echo: "]}})
+
+    assert {:ok, conn} = ssh_connect()
+    assert {:ok, ch} = :ssh_connection.session_channel(conn, 5000)
+    assert :success = :ssh_connection.subsystem(conn, ch, ~c"echo", 5000)
+    :ssh_connection.send(conn, ch, 0, "hello, world")
+    assert_receive {:ssh_cm, _, {:data, _, _, "echo: hello, world"}}
+    :ssh.close(conn)
+
+    # Remove the subsystem
+    assert :ok == NervesSSH.remove_subsystem(~c"echo")
+    assert {:ok, conn} = ssh_connect()
+    assert {:ok, ch} = :ssh_connection.session_channel(conn, 5000)
+    assert :failure = :ssh_connection.subsystem(conn, ch, ~c"echo", 5000)
+    :ssh.close(conn)
   end
 end

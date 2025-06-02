@@ -128,6 +128,22 @@ defmodule NervesSSH.Options do
   end
 
   @doc """
+  Add a subsystem
+  """
+  @spec add_subsystem(t(), :ssh.subsystem_spec()) :: t()
+  def add_subsystem(opts, subsystem_spec) do
+    %__MODULE__{opts | subsystems: Enum.uniq_by([subsystem_spec | opts.subsystems], &elem(&1, 0))}
+  end
+
+  @doc """
+  Remove a subsystem
+  """
+  @spec remove_subsystem(t(), charlist()) :: t()
+  def remove_subsystem(opts, subsystem_name) do
+    %__MODULE__{opts | subsystems: Enum.reject(opts.subsystems, &(elem(&1, 0) == subsystem_name))}
+  end
+
+  @doc """
   Load authorized keys from the authorized_keys file
   """
   @spec load_authorized_keys(t()) :: t()
