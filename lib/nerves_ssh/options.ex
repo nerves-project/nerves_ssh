@@ -97,7 +97,7 @@ defmodule NervesSSH.Options do
   Return :ssh.daemon_options()
   """
   @spec daemon_options(t()) :: :ssh.daemon_options()
-  def daemon_options(opts) do
+  def daemon_options(%__MODULE__{} = opts) do
     (base_opts() ++
        subsystem_opts(opts) ++
        shell_opts(opts) ++
@@ -113,7 +113,7 @@ defmodule NervesSSH.Options do
   Add an authorized key
   """
   @spec add_authorized_key(t(), String.t()) :: t()
-  def add_authorized_key(opts, key) do
+  def add_authorized_key(%__MODULE__{} = opts, key) do
     update_in(opts.authorized_keys, &Enum.uniq(&1 ++ [key]))
     |> decode_authorized_keys()
   end
@@ -122,7 +122,7 @@ defmodule NervesSSH.Options do
   Remove an authorized key
   """
   @spec remove_authorized_key(t(), String.t()) :: t()
-  def remove_authorized_key(opts, key) do
+  def remove_authorized_key(%__MODULE__{} = opts, key) do
     %{opts | decoded_authorized_keys: []}
     |> Map.update!(:authorized_keys, &for(k <- &1, k != key, do: k))
     |> decode_authorized_keys()
@@ -132,23 +132,23 @@ defmodule NervesSSH.Options do
   Add a subsystem
   """
   @spec add_subsystem(t(), :ssh.subsystem_spec()) :: t()
-  def add_subsystem(opts, subsystem_spec) do
-    %__MODULE__{opts | subsystems: Enum.uniq_by([subsystem_spec | opts.subsystems], &elem(&1, 0))}
+  def add_subsystem(%__MODULE__{} = opts, subsystem_spec) do
+    %{opts | subsystems: Enum.uniq_by([subsystem_spec | opts.subsystems], &elem(&1, 0))}
   end
 
   @doc """
   Remove a subsystem
   """
   @spec remove_subsystem(t(), charlist()) :: t()
-  def remove_subsystem(opts, subsystem_name) do
-    %__MODULE__{opts | subsystems: Enum.reject(opts.subsystems, &(elem(&1, 0) == subsystem_name))}
+  def remove_subsystem(%__MODULE__{} = opts, subsystem_name) do
+    %{opts | subsystems: Enum.reject(opts.subsystems, &(elem(&1, 0) == subsystem_name))}
   end
 
   @doc """
   Load authorized keys from the authorized_keys file
   """
   @spec load_authorized_keys(t()) :: t()
-  def load_authorized_keys(opts) when is_struct(opts) do
+  def load_authorized_keys(%__MODULE__{} = opts) do
     case File.read(authorized_keys_path(opts)) do
       {:ok, str} ->
         from_file = String.split(str, "\n", trim: true)
@@ -169,7 +169,7 @@ defmodule NervesSSH.Options do
   Decode the authorized keys into Erlang public key format
   """
   @spec decode_authorized_keys(t()) :: t()
-  def decode_authorized_keys(opts) do
+  def decode_authorized_keys(%__MODULE__{} = opts) do
     keys = for {key, _} <- Enum.flat_map(opts.authorized_keys, &decode_key/1), do: key
     update_in(opts.decoded_authorized_keys, &Enum.uniq(&1 ++ keys))
   end
@@ -178,7 +178,7 @@ defmodule NervesSSH.Options do
   Save the authorized keys to authorized_keys file
   """
   @spec save_authorized_keys(t()) :: :ok | {:error, File.posix()}
-  def save_authorized_keys(opts) do
+  def save_authorized_keys(%__MODULE__{} = opts) do
     kpath = authorized_keys_path(opts)
 
     with :ok <- File.mkdir_p(Path.dirname(kpath)) do
@@ -191,7 +191,7 @@ defmodule NervesSSH.Options do
   Add user credential to SSH options
   """
   @spec add_user(t(), String.t(), String.t() | nil) :: t()
-  def add_user(opts, user, password)
+  def add_user(%__MODULE__{} = opts, user, password)
       when is_binary(user) and (is_binary(password) or is_nil(password)) do
     update_in(opts.user_passwords, &Enum.uniq_by([{user, password} | &1], fn {u, _} -> u end))
   end
@@ -200,7 +200,7 @@ defmodule NervesSSH.Options do
   Remove user credential from SSH options
   """
   @spec remove_user(t(), String.t()) :: t()
-  def remove_user(opts, user) do
+  def remove_user(%__MODULE__{} = opts, user) do
     update_in(opts.user_passwords, &for({u, _} = k <- &1, u != user, do: k))
   end
 
@@ -320,7 +320,7 @@ defmodule NervesSSH.Options do
       |> Keyword.drop([:dot_iex, :dot_iex_path])
       |> Keyword.put(@dot_iex_option, safe_dot_iex)
 
-    %__MODULE__{opts | subsystems: safe_subsystems, iex_opts: iex_opts}
+    %{opts | subsystems: safe_subsystems, iex_opts: iex_opts}
   end
 
   defp validate_dot_iex(path) do
