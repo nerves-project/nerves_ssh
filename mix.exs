@@ -15,14 +15,7 @@ defmodule NervesSSH.MixProject do
       description: description(),
       dialyzer: dialyzer(),
       docs: docs(),
-      package: package(),
-      preferred_cli_env: %{
-        docs: :docs,
-        "hex.publish": :docs,
-        "hex.build": :docs,
-        credo: :test,
-        dialyzer: :dialyzer
-      }
+      package: package()
     ]
   end
 
@@ -30,6 +23,18 @@ defmodule NervesSSH.MixProject do
     [
       extra_applications: [:logger, :public_key, :ssh],
       mod: {NervesSSH.Application, []}
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: %{
+        dialyzer: :dialyzer,
+        docs: :docs,
+        "hex.publish": :docs,
+        "hex.build": :docs,
+        credo: :test
+      }
     ]
   end
 
