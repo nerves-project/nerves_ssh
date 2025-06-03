@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.0
+
+This release removes support for Elixir 1.13.
+
+* Updates
+  * Add `NervesSSH.add_subsystem/2` and `NervesSSH.remove_system/2` for
+    managing subsystems at runtime. @bjyoungblood
+  * Clarify licensing and copyrights to become [REUSE](https://reuse.software/)
+    compliant
+  * Minor updates to fix Elixir 1.19 warnings
+
 ## v1.0.1
 
 This release adds support for Elixir 1.18.
