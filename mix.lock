@@ -17,7 +17,7 @@
   "nerves_uevent": {:hex, :nerves_uevent, "0.1.1", "2cf5a612698722b2898d2d98dc157c30623b2158cde45a072ef2d489b221c653", [:make, :mix], [{:elixir_make, "~> 0.6", [hex: :elixir_make, repo: "hexpm", optional: false]}, {:property_table, "~> 0.2.0 or ~> 0.3.0", [hex: :property_table, repo: "hexpm", optional: false]}], "hexpm", "9a354034e1ccd199a7daa3ff94e8794b39a528219e940b2f4e7bf39d63367752"},
   "nimble_parsec": {:hex, :nimble_parsec, "1.4.2", "8efba0122db06df95bfaa78f791344a89352ba04baedd3849593bfce4d0dc1c6", [:mix], [], "hexpm", "4b21398942dda052b403bbe1da991ccd03a053668d147d53fb8c4e0efe09c973"},
   "property_table": {:hex, :property_table, "0.3.1", "f71381dea834f9c62eff043c626e7af0ef5697258cb961040927e086c7ecb9b6", [:mix], [], "hexpm", "3ebc06667d3a95101a7dba5e9db800395bd5de6b8debbc5a064f78bb1ec5668b"},
-  "ssh_subsystem_fwup": {:hex, :ssh_subsystem_fwup, "0.6.2", "f551804decfa81254eadb6a69e5f905bcf2cb97a2f3069918cb7e55de0210c30", [:mix], [], "hexpm", "7cb8c598b02d95a6aea8888004082de5a74ae977ddfb5b608b1b6b1aaceb2ff3"},
+  "ssh_subsystem_fwup": {:hex, :ssh_subsystem_fwup, "0.6.3", "40d1c365222e77f05e829c25e610c49359640c3bd301af9218339142b3d91560", [:mix], [], "hexpm", "34183ebc17d638d4ad819485897d2478b3d9399111f1ace36598c1eebd12b12b"},
   "sshex": {:hex, :sshex, "2.2.1", "e1270b8345ea2a66a11c2bb7aed22c93e3bc7bc813486f4ffd0a980e4a898160", [:mix], [], "hexpm", "45b2caa5011dc850e70a2d77e3b62678a3e8bcb903eab6f3e7afb2ea897b13db"},
   "uboot_env": {:hex, :uboot_env, "1.0.1", "b0e136cf1a561412ff7db23ed2b6df18d7c7ce2fc59941afd851006788a67f3d", [:mix], [], "hexpm", "b6d4fe7c24123be57ed946c48116d23173e37944bc945b8b76fccc437909c60b"},
 }
