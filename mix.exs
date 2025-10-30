@@ -15,7 +15,8 @@ defmodule NervesSSH.MixProject do
       description: description(),
       dialyzer: dialyzer(),
       docs: docs(),
-      package: package()
+      package: package(),
+      test_ignore_filters: ["test/fixtures/iex.exs"]
     ]
   end
 
