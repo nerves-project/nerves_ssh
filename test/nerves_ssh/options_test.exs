@@ -213,6 +213,23 @@ defmodule NervesSSH.OptionsTest do
     assert opts == Options.sanitize(opts)
   end
 
+  test "mfa options are converted to function references" do
+    app_environment = [
+      daemon_option_overrides: [
+        pwdfun: {__MODULE__, :test_fun, 2},
+        auth_method_kb_interactive_data: {__MODULE__, :test_fun, 3}
+      ]
+    ]
+
+    opts = Options.with_defaults(app_environment)
+
+    assert opts.daemon_option_overrides[:pwdfun].(1, 2) == 2
+    assert opts.daemon_option_overrides[:auth_method_kb_interactive_data].(1, 2, 3) == 3
+  end
+
+  def test_fun(_, _), do: 2
+  def test_fun(_, _, _), do: 3
+
   describe "system host keys" do
     setup context do
       sys_dir = ~c"/tmp/nerves_ssh/sys_#{context.algorithm}-#{:rand.uniform(1000)}"

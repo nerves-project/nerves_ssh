@@ -92,7 +92,7 @@ NervesSSH supports the following configuration items:
 * `:iex_opts` - additional options to use when starting up IEx
 * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`.
   These take precedence and are unchecked. Be careful using this since it can
-  break other options.
+  break other options. MFAs may be used instead of function refs for OTP 28+.
 
 ### SSH host keys
 

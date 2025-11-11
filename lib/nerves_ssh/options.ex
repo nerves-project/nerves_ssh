@@ -315,13 +315,26 @@ defmodule NervesSSH.Options do
     # Normalizes :dot_iex or :dot_iex_path usage to match Elixir version
     safe_dot_iex = validate_dot_iex(opts.iex_opts[:dot_iex] || opts.iex_opts[:dot_iex_path])
 
-    iex_opts =
+    safe_iex_opts =
       opts.iex_opts
       |> Keyword.drop([:dot_iex, :dot_iex_path])
       |> Keyword.put(@dot_iex_option, safe_dot_iex)
 
-    %{opts | subsystems: safe_subsystems, iex_opts: iex_opts}
+    # Normalize MFAs in the daemon overrides to be function references.
+    # MFAs are needed in OTP 28 since function refs sometimes give errors when
+    # part of the application config.
+    safe_daemon_option_overrides = Enum.map(opts.daemon_option_overrides, &mfa_to_fn/1)
+
+    %{
+      opts
+      | subsystems: safe_subsystems,
+        iex_opts: safe_iex_opts,
+        daemon_option_overrides: safe_daemon_option_overrides
+    }
   end
+
+  defp mfa_to_fn({k, {m, f, a}}), do: {k, Function.capture(m, f, a)}
+  defp mfa_to_fn(other), do: other
 
   defp validate_dot_iex(path) do
     [path, ".iex.exs", "~/.iex.exs", "/etc/iex.exs"]
