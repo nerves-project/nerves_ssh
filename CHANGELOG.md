@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.0
+
+* Updates
+  * Support specifying MFAs instead of function refs for the
+    `:daemon_option_overrides` option. This is sometimes needed with OTP 28 to
+    avoid an application environment checks.
+
 ## v1.1.0
 
 This release removes support for Elixir 1.13.
