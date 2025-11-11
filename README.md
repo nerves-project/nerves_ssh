@@ -1,3 +1,10 @@
+<!--
+  SPDX-FileCopyrightText: 2020 Frank Hunleth
+  SPDX-FileCopyrightText: 2020 Jon Carstens
+  SPDX-FileCopyrightText: 2021 Jason Axelson
+  SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # NervesSSH
 
 [![Hex version](https://img.shields.io/hexpm/v/nerves_ssh.svg "Hex version")](https://hex.pm/packages/nerves_ssh)
