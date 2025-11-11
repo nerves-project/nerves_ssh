@@ -128,7 +128,19 @@ defmodule NervesSSH.OptionsTest do
     opts = Options.new(user_passwords: [{"alice", "password"}, {"bob", "1234"}])
     daemon_options = Options.daemon_options(opts)
 
-    assert daemon_options[:pwdfun]
+    fun = daemon_options[:pwdfun]
+    assert is_function(fun, 4)
+
+    # Check that the username and passwords actually work
+    ip_port = {{1, 2, 3, 4}, 22}
+
+    # Success cases
+    assert fun.(~c"alice", ~c"password", ip_port, :undefined)
+    assert fun.(~c"bob", ~c"1234", ip_port, 1)
+
+    # Retry or failure cases
+    assert {false, 1} == fun.(~c"alice", ~c"nope", ip_port, :undefined)
+    assert :disconnect == fun.(~c"alice", ~c"nope", ip_port, 3)
   end
 
   test "adding user/password to options" do
