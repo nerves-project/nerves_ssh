@@ -51,14 +51,7 @@ defmodule NervesSSH.OptionsTest do
 
   test "fwup subsystem can be changed" do
     subsystem = {~c"fwup", {SSHSubsystemFwup, []}}
-
-    opts =
-      Options.with_defaults(
-        subsystems: [
-          subsystem
-        ]
-      )
-
+    opts = Options.with_defaults(subsystems: [subsystem])
     assert opts.subsystems == [subsystem]
   end
 
