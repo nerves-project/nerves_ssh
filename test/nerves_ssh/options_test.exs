@@ -227,7 +227,9 @@ defmodule NervesSSH.OptionsTest do
     assert opts.daemon_option_overrides[:auth_method_kb_interactive_data].(1, 2, 3) == 3
   end
 
+  @spec test_fun(any(), any()) :: 2
   def test_fun(_, _), do: 2
+  @spec test_fun(any(), any(), any()) :: 3
   def test_fun(_, _, _), do: 3
 
   describe "system host keys" do
