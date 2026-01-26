@@ -5,6 +5,15 @@
 
 # Changelog
 
+## v1.3.0
+
+This release completely removes support for the SCP protocol. This shouldn't
+affect use of the `scp` commandline program since it was updated to use the SFTP
+protocol in 2022. See https://www.openssh.org/txt/release-9.0.
+
+The code is being removed to avoid needing to maintain or audit it for security
+issues.
+
 ## v1.2.0
 
 * Updates
