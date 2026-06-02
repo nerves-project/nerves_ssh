@@ -18,7 +18,7 @@ defmodule NervesSSH.Application do
     This is probably not right. If you recently upgraded to :nerves_ssh or
     a library that uses it like :nerves_pack, you'll need to edit your config.exs
     and rename references to :nerves_firmware_ssh to :nerves_ssh. See
-    https://hexdocs.pm/nerves_ssh/readme.html#configuration.
+    https://nerves-ssh.hexdocs.pm/readme.html#configuration.
 
     To use both :nerves_ssh and :nerves_firmware_ssh simultaneously, supply a
     :nerves_ssh config to bypass this error.
