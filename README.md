@@ -8,7 +8,7 @@
 # NervesSSH
 
 [![Hex version](https://img.shields.io/hexpm/v/nerves_ssh.svg "Hex version")](https://hex.pm/packages/nerves_ssh)
-[![API docs](https://img.shields.io/hexpm/v/nerves_ssh.svg?label=hexdocs "API docs")](https://hexdocs.pm/nerves_ssh/NervesSSH.html)
+[![API docs](https://img.shields.io/hexpm/v/nerves_ssh.svg?label=hexdocs "API docs")](https://nerves-ssh.hexdocs.pm/NervesSSH.html)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/nerves-project/nerves_ssh/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/nerves-project/nerves_ssh/tree/main)
 [![REUSE status](https://api.reuse.software/badge/github.com/nerves-project/nerves_ssh)](https://api.reuse.software/info/github.com/nerves-project/nerves_ssh)
 
@@ -219,7 +219,7 @@ If you are migrating from `:nerves_firmware_ssh`, or updating to `:nerves_pack
    updates)
 5. After the new firmware with `:nerves_ssh` is on the device, then you'll need
    to generate the new `upload.sh` script with `mix firmware.gen.script`, or see
-   [SSHSubsystemFwup](https://hexdocs.pm/ssh_subsystem_fwup/readme.html) for
+   [SSHSubsystemFwup](https://ssh-subsystem-fwup.hexdocs.pm/readme.html) for
    other supported options
 
 ## Goals
