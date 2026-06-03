@@ -21,6 +21,11 @@ defmodule NervesSSH.Options do
   * `:shell` - the language of the shell (`:elixir`, `:erlang`, `:lfe` or `:disabled`). Defaults to `:elixir`.
   * `:exec` - the language to use for commands sent over ssh (`:elixir`, `:erlang`, or `:disabled`). Defaults to `:elixir`.
   * `:iex_opts` - additional options to use when starting up IEx
+  * `:detect_terminal_capabilities` - whether to query the connecting terminal
+    for modern feature support (Kitty graphics, sixel, etc.) at the start of each
+    interactive session. `true` (default), `false`, or a keyword list of options
+    passed to `NervesSSH.TerminalCapabilities.detect/1` (e.g. `[timeout: 1000]`).
+    Only applies to the Elixir shell on Elixir 1.17+.
   * `:user_passwords` - a list of username/password tuples (stored in the clear!)
   * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`. These take precedence and are unchecked. Be careful using this since it can break other options.
   """
@@ -52,6 +57,7 @@ defmodule NervesSSH.Options do
           shell: language(),
           exec: language(),
           iex_opts: keyword(),
+          detect_terminal_capabilities: boolean() | keyword(),
           daemon_option_overrides: keyword()
         }
 
@@ -66,6 +72,7 @@ defmodule NervesSSH.Options do
             shell: :elixir,
             exec: :elixir,
             iex_opts: [{@dot_iex_option, Path.expand(".iex.exs")}],
+            detect_terminal_capabilities: true,
             daemon_option_overrides: []
 
   @doc """
@@ -254,8 +261,8 @@ defmodule NervesSSH.Options do
   end
 
   if Version.match?(System.version(), ">= 1.17.0") do
-    defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
-      do: [{:shell, {:iex, :start, [iex_opts, {:elixir_utils, :noop, []}]}}]
+    defp shell_opts(%{shell: :elixir, iex_opts: iex_opts} = opts),
+      do: [{:shell, {:iex, :start, [iex_opts, shell_callback(opts)]}}]
   else
     defp shell_opts(%{shell: :elixir, iex_opts: iex_opts}),
       do: [{:shell, {Elixir.IEx, :start, [iex_opts]}}]
@@ -264,6 +271,19 @@ defmodule NervesSSH.Options do
   defp shell_opts(%{shell: :erlang}), do: []
   defp shell_opts(%{shell: :lfe}), do: [{:shell, {:lfe_shell, :start, []}}]
   defp shell_opts(%{shell: :disabled}), do: [shell: :disabled]
+
+  # The IEx shell-startup callback runs once, before the prompt, with the
+  # session's terminal as its group leader. We use it to detect terminal
+  # capabilities; otherwise fall back to the upstream no-op.
+  defp shell_callback(%{detect_terminal_capabilities: false}),
+    do: {:elixir_utils, :noop, []}
+
+  defp shell_callback(%{detect_terminal_capabilities: detect_opts})
+       when is_list(detect_opts),
+       do: {NervesSSH.TerminalCapabilities, :detect_callback, [detect_opts]}
+
+  defp shell_callback(%{detect_terminal_capabilities: _truthy}),
+    do: {NervesSSH.TerminalCapabilities, :detect_callback, [[]]}
 
   defp exec_opts(%{exec: :elixir}), do: [exec: {:direct, &NervesSSH.Exec.run_elixir/1}]
   defp exec_opts(%{exec: :erlang}), do: []
