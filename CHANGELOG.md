@@ -5,6 +5,17 @@
 
 # Changelog
 
+## Unreleased
+
+* New features
+  * Per-connection terminal capability detection. At the start of each
+    interactive Elixir session, NervesSSH can query the connecting terminal for
+    modern feature support (Kitty graphics, sixel, Kitty keyboard protocol,
+    synchronized output, terminal name/version) and expose the results to code
+    running in the session via `NervesSSH.TerminalCapabilities.get/0`. Enabled by
+    default; configurable with the `:detect_terminal_capabilities` option.
+    Requires the Elixir shell on Elixir 1.17+.
+
 ## v1.3.0
 
 This release completely removes support for the SCP protocol. This shouldn't

@@ -97,6 +97,10 @@ NervesSSH supports the following configuration items:
 * `:exec` - the language to use for commands sent over ssh (`:elixir`,
   `:erlang`, `lfe`, or `:disabled`). Defaults to `:elixir`.
 * `:iex_opts` - additional options to use when starting up IEx
+* `:detect_terminal_capabilities` - query the connecting terminal for modern
+  feature support at the start of each interactive session. `true` (default),
+  `false`, or a keyword list of options (e.g. `[timeout: 1000]`). See
+  [Terminal capabilities](#terminal-capabilities).
 * `:daemon_option_overrides` - additional options to pass to `:ssh.daemon/2`.
   These take precedence and are unchecked. Be careful using this since it can
   break other options. MFAs may be used instead of function refs for OTP 28+.
@@ -132,6 +136,57 @@ Host nerves.local
     UserKnownHostsFile /dev/null
     StrictHostKeyChecking no
 ```
+
+## Terminal capabilities
+
+Modern terminals support far more than VT100: inline images (the
+[Kitty graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
+and sixel), the Kitty keyboard protocol, synchronized output, and so on. The
+usual way to detect these — sniffing `TERM`/`KITTY_PID`/`TERM_PROGRAM` — doesn't
+work on a Nerves device: those environment variables live on your laptop, not on
+the device, and they don't survive the hop over SSH.
+
+Instead, NervesSSH can detect capabilities *per connection* by querying the
+terminal directly. At the start of each interactive session — before the IEx
+prompt appears — it sends a batch of capability queries terminated by a Primary
+Device Attributes (DA1) request and reads the responses back over the pty. DA1
+is answered by essentially every terminal and responses arrive in order, so its
+reply doubles as a "we're done" sentinel.
+
+This is on by default. Disable it, or tune the response timeout, with the
+`:detect_terminal_capabilities` option:
+
+```elixir
+config :nerves_ssh,
+  # ...
+  detect_terminal_capabilities: [timeout: 1000]
+  # or `false` to turn it off
+```
+
+Code running inside a session can read what was detected:
+
+```elixir
+iex> NervesSSH.TerminalCapabilities.get()
+%NervesSSH.TerminalCapabilities{
+  queried?: true,
+  term: "kitty(0.32.0)",
+  primary_da: "62;4",
+  sixel: true,
+  kitty_graphics: true,
+  kitty_keyboard: true,
+  synchronized_output: true,
+  raw: "..."
+}
+```
+
+Use this to decide, for example, whether to render a QR code or chart inline
+with the Kitty graphics protocol or fall back to ASCII. If the terminal doesn't
+answer (or detection is disabled), `get/0` returns a struct with `queried?:
+true` and all features `false`, or `nil` respectively, and nothing is printed to
+the session.
+
+When detection is enabled, a terminal that doesn't respond adds at most one
+`:timeout` (default 500 ms) to session startup.
 
 ## Authentication
 
