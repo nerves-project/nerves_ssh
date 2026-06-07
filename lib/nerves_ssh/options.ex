@@ -266,9 +266,16 @@ defmodule NervesSSH.Options do
   defp shell_opts(%{shell: :disabled}), do: [shell: :disabled]
 
   defp exec_opts(%{exec: :elixir}), do: [exec: {:direct, &NervesSSH.Exec.run_elixir/1}]
-  defp exec_opts(%{exec: :erlang}), do: []
   defp exec_opts(%{exec: :lfe}), do: [exec: {:direct, &NervesSSH.Exec.run_lfe/1}]
   defp exec_opts(%{exec: :disabled}), do: [exec: :disabled]
+
+  if @otp >= 29 do
+    # See https://github.com/erlang/otp/commit/edbbaf82f47f63dbe9558a7683b6083f080b3b78
+    # for the update that made this explicit.
+    defp exec_opts(%{exec: :erlang}), do: [exec: :erlang_eval]
+  else
+    defp exec_opts(%{exec: :erlang}), do: []
+  end
 
   defp key_cb_opts(opts), do: [key_cb: {NervesSSH.Keys, name: opts.name}]
 
