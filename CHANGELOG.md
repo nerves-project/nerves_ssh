@@ -5,6 +5,13 @@
 
 # Changelog
 
+## v1.3.1
+
+* Updates
+  * Support OTP 29's change to require explicitly enabling exec support for
+    Erlang. Nearly all Nerves users either disable exec or use Elixir to evaluate
+    execs, so this probably doesn't affect many people.
+
 ## v1.3.0
 
 This release completely removes support for the SCP protocol. This shouldn't

@@ -3,7 +3,7 @@
 defmodule NervesSSH.MixProject do
   use Mix.Project
 
-  @version "1.3.0"
+  @version "1.3.1"
   @source_url "https://github.com/nerves-project/nerves_ssh"
 
   def project do
