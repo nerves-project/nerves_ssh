@@ -13,6 +13,10 @@ defmodule NervesSSH.MixProject do
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      compilers: [:elixir_make | Mix.compilers()],
+      make_targets: ["all"],
+      make_clean: ["mix_clean"],
+      make_error_message: "",
       deps: deps(),
       description: description(),
       dialyzer: dialyzer(),
@@ -48,6 +52,7 @@ defmodule NervesSSH.MixProject do
     [
       {:dialyxir, "~> 1.4", only: :dialyzer, runtime: false},
       {:ex_doc, "~> 0.22", only: :docs, runtime: false},
+      {:elixir_make, "~> 0.6", runtime: false},
       {:ssh_subsystem_fwup, "~> 0.5"},
       {:nerves_runtime, "~> 0.11"},
       # lfe currently requires `compile: "make"` to build and this is
