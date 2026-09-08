@@ -191,6 +191,20 @@ You can use `NervesSSH.add_user/2` and `NervesSSH.remove_user/1` for managing
 credentials at runtime, but they are not saved to disk so restarting `NervesSSH`
 will cause them to be lost (such as a reboot or daemon crash)
 
+## Troubleshooting
+
+### subsystem request failed on channel 0
+
+Erlang/OTP 29.0.6 has an update that causes programs that use the ssh subsystem
+feature to fail. This includes `sftp` and Nerves OTA updates via `ssh`. The `mix
+upload` task works around this issue internally. For everything else, the
+workaround is to unset the environment before making the connection. For
+example:
+
+```sh
+env -i sftp nerves.local
+```
+
 ## Upgrade from `NervesFirmwareSSH`
 
 If you are migrating from `:nerves_firmware_ssh`, or updating to `:nerves_pack
