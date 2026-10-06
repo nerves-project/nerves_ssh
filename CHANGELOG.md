@@ -5,6 +5,11 @@
 
 # Changelog
 
+## v1.3.2
+
+* Fixes
+  * Use constant time password comparison when checking passwords
+
 ## v1.3.1
 
 * Updates
