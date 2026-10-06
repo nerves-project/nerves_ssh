@@ -133,6 +133,7 @@ defmodule NervesSSH.OptionsTest do
 
     # Retry or failure cases
     assert {false, 1} == fun.(~c"alice", ~c"nope", ip_port, :undefined)
+    assert {false, 1} == fun.(~c"alice", List.duplicate(?a, 6000), ip_port, :undefined)
     assert :disconnect == fun.(~c"alice", ~c"nope", ip_port, 3)
   end
 

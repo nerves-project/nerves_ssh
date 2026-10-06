@@ -33,11 +33,18 @@ defmodule NervesSSH.UserPasswords do
   defp authorized?(name, user, pwd) do
     NervesSSH.configuration(name).user_passwords
     |> Enum.find_value(false, fn {u, p} ->
-      "#{u}" == "#{user}" and "#{p}" == "#{pwd}"
+      "#{u}" == "#{user}" and password_matches?(p, pwd)
     end)
   catch
     :exit, _ ->
       false
+  end
+
+  defp password_matches?(expected, actual) do
+    :crypto.hash_equals(
+      :crypto.hash(:sha256, "#{expected}"),
+      :crypto.hash(:sha256, "#{actual}")
+    )
   end
 
   defp maybe_disconnect(attempt, user, {ip, port}) when attempt >= 3 do
