@@ -22,12 +22,16 @@ defmodule NervesSSH.ApplicationTest do
       user_dir: Path.absname("test/fixtures/good_user_dir")
     ]
 
-    # Short sleep to make sure server is up an running
-    Process.sleep(200)
-
     with {:ok, conn} <- SSHEx.connect(ssh_options) do
       SSHEx.run(conn, cmd)
     end
+  end
+
+  # NervesSSH starts the daemon in handle_continue/2, so make a synchronous
+  # call to the GenServer to ensure that the daemon is listening
+  defp wait_for_daemon() do
+    _ = :sys.get_state(NervesSSH)
+    :ok
   end
 
   @tag :has_good_sshd_exec
@@ -45,7 +49,7 @@ defmodule NervesSSH.ApplicationTest do
     ])
 
     assert :ok == Application.start(:nerves_ssh)
-    Process.sleep(25)
+    wait_for_daemon()
     assert {:ok, ":started_once?", 0} == ssh_run(":started_once?")
 
     assert :ok == Application.stop(:nerves_ssh)
@@ -53,7 +57,7 @@ defmodule NervesSSH.ApplicationTest do
     assert {:error, :econnrefused} == ssh_run(":really_stopped?")
 
     assert :ok == Application.start(:nerves_ssh)
-    Process.sleep(25)
+    wait_for_daemon()
     assert {:ok, ":started_again?", 0} == ssh_run(":started_again?")
 
     assert :ok == Application.stop(:nerves_ssh)
