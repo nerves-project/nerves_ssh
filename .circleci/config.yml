@@ -13,7 +13,7 @@ latest: &latest
 
 tags: &tags
   [
-    1.20.4-erlang-29.0.6-alpine-3.24.1,
+    1.20.4-erlang-29.1.1-alpine-3.24.2,
     1.19.5-erlang-28.5.0.2-alpine-3.23.5,
     1.18.4-erlang-28.5.0.2-alpine-3.23.4,
     1.17.3-erlang-27.3.4.13-alpine-3.23.5,
