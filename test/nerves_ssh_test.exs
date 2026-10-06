@@ -50,9 +50,6 @@ defmodule NervesSSHTest do
       ]
       |> Keyword.merge(options)
 
-    # Short sleep to make sure server is up an running
-    Process.sleep(200)
-
     SSHEx.connect(ssh_options)
   end
 
@@ -60,6 +57,14 @@ defmodule NervesSSHTest do
     with {:ok, conn} <- ssh_connect(options) do
       SSHEx.run(conn, cmd)
     end
+  end
+
+  # NervesSSH starts the daemon in handle_continue/2, so make a synchronous
+  # call to the GenServer to ensure that the daemon is listening
+  defp start_nerves_ssh!(child_spec) do
+    pid = start_supervised!(child_spec)
+    _ = :sys.get_state(pid)
+    pid
   end
 
   defp ssh_port() do
@@ -74,19 +79,19 @@ defmodule NervesSSHTest do
 
   @tag :has_good_sshd_exec
   test "private key login" do
-    start_supervised!({NervesSSH, nerves_ssh_config()})
+    start_nerves_ssh!({NervesSSH, nerves_ssh_config()})
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
   end
 
   @tag :has_good_sshd_exec
   test "username/password login" do
-    start_supervised!({NervesSSH, nerves_ssh_config()})
+    start_nerves_ssh!({NervesSSH, nerves_ssh_config()})
     assert {:ok, "2", 0} == ssh_run("1 + 1", @username_login)
   end
 
   @tag :has_good_sshd_exec
   test "can recover from sshd failure" do
-    start_supervised!({NervesSSH, nerves_ssh_config()})
+    start_nerves_ssh!({NervesSSH, nerves_ssh_config()})
 
     # Test we can send SSH command
     state = :sys.get_state(NervesSSH)
@@ -107,7 +112,7 @@ defmodule NervesSSHTest do
   test "starting the application after terminate wasn't called" do
     # Start a server up manually to simulate terminate not being called
     # to shut down the server.
-    {:ok, _pid} =
+    {:ok, pid} =
       GenServer.start(
         NervesSSH,
         NervesSSH.Options.new(
@@ -118,27 +123,28 @@ defmodule NervesSSHTest do
         )
       )
 
+    _ = :sys.get_state(pid)
+
     # Verify that the old server has started and that it won't accept
     # the test credentials.
     assert {:error, ~c"Unable to connect using the available authentication methods"} ==
              ssh_run(":started_again?")
 
     # Start the real server up. It should kill our old one.
-    start_supervised!({NervesSSH, nerves_ssh_config()})
-    Process.sleep(25)
+    start_nerves_ssh!({NervesSSH, nerves_ssh_config()})
     assert {:ok, ":started_again?", 0} == ssh_run(":started_again?")
   end
 
   @tag :has_good_sshd_exec
   test "erlang exec works" do
     options = %{nerves_ssh_config() | shell: :erlang, exec: :erlang}
-    start_supervised!({NervesSSH, options})
+    start_nerves_ssh!({NervesSSH, options})
     assert {:ok, "3", 0} == ssh_run("1 + 2.", @username_login)
   end
 
   @tag :has_good_sshd_exec
   test "lfe exec works" do
-    start_supervised!({NervesSSH, Map.put(nerves_ssh_config(), :exec, :lfe)})
+    start_nerves_ssh!({NervesSSH, Map.put(nerves_ssh_config(), :exec, :lfe)})
     assert {:ok, "2", 0} == ssh_run("(+ 1 1)", @username_login)
   end
 
@@ -155,7 +161,7 @@ defmodule NervesSSHTest do
         decoded_authorized_keys: []
     }
 
-    start_supervised!({NervesSSH, config})
+    start_nerves_ssh!({NervesSSH, config})
 
     assert {:error, _} = ssh_run("1 + 1", @key_login)
 
@@ -181,7 +187,7 @@ defmodule NervesSSHTest do
         authorized_keys: [@ed25519_public_key]
     }
 
-    start_supervised!({NervesSSH, config})
+    start_nerves_ssh!({NervesSSH, config})
 
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
 
@@ -196,7 +202,7 @@ defmodule NervesSSHTest do
 
   @tag :has_good_sshd_exec
   test "adding user/password at runtime" do
-    start_supervised!({NervesSSH, nerves_ssh_config()})
+    start_nerves_ssh!({NervesSSH, nerves_ssh_config()})
     refute {:ok, "2", 0} == ssh_run("1 + 1", user: ~c"jon", password: ~c"wat")
     NervesSSH.add_user("jon", "wat")
     assert {:ok, "2", 0} == ssh_run("1 + 1", user: ~c"jon", password: ~c"wat")
@@ -204,7 +210,7 @@ defmodule NervesSSHTest do
 
   @tag :has_good_sshd_exec
   test "removing user/password at runtime" do
-    start_supervised!({NervesSSH, nerves_ssh_config()})
+    start_nerves_ssh!({NervesSSH, nerves_ssh_config()})
     login = Keyword.drop(@username_login, [:user_dir])
     assert {:ok, "2", 0} == ssh_run("1 + 1", login)
     NervesSSH.remove_user("#{login[:user]}")
@@ -216,9 +222,9 @@ defmodule NervesSSHTest do
     config = nerves_ssh_config() |> Map.put(:name, :daemon_a)
     other_config = %{config | name: :daemon_b, port: config.port + 1}
     # start two servers, starting with identical configs, except the port
-    start_supervised!(Supervisor.child_spec({NervesSSH, config}, id: :daemon_a))
+    start_nerves_ssh!(Supervisor.child_spec({NervesSSH, config}, id: :daemon_a))
 
-    start_supervised!(Supervisor.child_spec({NervesSSH, other_config}, id: :daemon_b))
+    start_nerves_ssh!(Supervisor.child_spec({NervesSSH, other_config}, id: :daemon_b))
 
     assert {:ok, "2", 0} == ssh_run("1 + 1", @key_login)
 
@@ -242,7 +248,7 @@ defmodule NervesSSHTest do
 
   @tag :has_good_sshd_exec
   test "can add and remove subsystems at runtime" do
-    start_supervised!({NervesSSH, nerves_ssh_config()})
+    start_nerves_ssh!({NervesSSH, nerves_ssh_config()})
 
     assert [{~c"fwup", _}, {~c"sftp", _}] = NervesSSH.configuration().subsystems
 
