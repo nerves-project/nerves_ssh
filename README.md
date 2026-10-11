@@ -9,6 +9,7 @@
 
 [![Hex version](https://img.shields.io/hexpm/v/nerves_ssh.svg "Hex version")](https://hex.pm/packages/nerves_ssh)
 [![API docs](https://img.shields.io/hexpm/v/nerves_ssh.svg?label=hexdocs "API docs")](https://nerves-ssh.hexdocs.pm/NervesSSH.html)
+[![Nerves compatibility](https://compatibility.nerves-project.org/badge/nerves_ssh.svg)](https://compatibility.nerves-project.org/packages/nerves_ssh)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/nerves-project/nerves_ssh/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/nerves-project/nerves_ssh/tree/main)
 [![REUSE status](https://api.reuse.software/badge/github.com/nerves-project/nerves_ssh)](https://api.reuse.software/info/github.com/nerves-project/nerves_ssh)
 
