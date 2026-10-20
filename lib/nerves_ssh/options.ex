@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: 2022 Connor Rigby
 # SPDX-FileCopyrightText: 2022 Steffen Deusch
 # SPDX-FileCopyrightText: 2025 Ben Youngblood
+# SPDX-FileCopyrightText: 2026 Lars Wikman
 #
 # SPDX-License-Identifier: Apache-2.0
 #
