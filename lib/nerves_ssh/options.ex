@@ -399,10 +399,9 @@ defmodule NervesSSH.Options do
       Keyword.take(daemon_opts, [:modify_algorithms, :preferred_algorithms, :pref_public_key_algs])
 
     # Only the algorithm options matter here. Without a `:pwdfun`, OTP's
-    # ssh_options adds a "fake password checker" to server options, which
-    # runs crypto:pbkdf2_hmac/5 with a high iteration count. That's a
-    # significant amount of CPU on small devices and it's wasted here since
-    # these options are never used to run a daemon.
+    # ssh_options adds a "fake password checker" to server options in some
+    # Erlang versions. This runs crypto:pbkdf2_hmac/5 with a high iteration
+    # count. See https://github.com/erlang/otp/pull/11907.
     filtered = Keyword.put(filtered, :pwdfun, fn _user, _password -> false end)
 
     ssh_opts = :ssh_options.handle_options(:server, filtered)
