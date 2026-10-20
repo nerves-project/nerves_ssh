@@ -5,6 +5,15 @@
 
 # Changelog
 
+## v1.3.3
+
+* Fixes
+  * Word around the current OTP behavior when checking password options which
+    is to run crypto:pbkdf2_hmac/5 with 600,000 iterations of HMAC-SHA256.
+    See https://github.com/erlang/otp/pull/11907 for the currently pending fix
+    PR. The change here is trivial so there's no reason to wait for a new OTP
+    release.
+
 ## v1.3.2
 
 * Fixes
