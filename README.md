@@ -64,6 +64,58 @@ config :shoehorn,
 your main OTP application stops, OTP may stop `:nerves_ssh`, and that would make
 your device inaccessible via SSH.
 
+### Igniter
+
+If your project uses [Igniter](https://hex.pm/packages/igniter), the dependency
+and the configuration can be added with:
+
+```sh
+mix igniter.install nerves_ssh
+```
+
+This sets up public key authentication like `mix nerves.new` does: the
+`config :nerves_ssh` that it adds to `config/target.exs` reads the public keys
+in `~/.ssh/id_{rsa,ecdsa,ed25519}.pub` when the firmware is built. No key
+material is written to your project. If the project has a list of applications
+to start early (`config :nerves, application_sort: [init: [...]]` or
+`config :shoehorn, init: [...]`), `:nerves_ssh` is added to it. Existing
+`:nerves_ssh` configuration is left alone. Pass `--ssh-username NAME` to set up username and password login instead of public keys (see below). See
+[Configuration](#configuration) for what else can be set.
+
+If other dependencies in your `mix.exs` are restricted to devices with a module
+attribute like `targets: @all_targets`, the `:nerves_ssh` dependency gets the
+same option so that the SSH server isn't started on your computer.
+
+#### Username and password login
+
+Public key authentication is what you want in most cases. If you need to log
+in with a username and password as well, there's an opt-in task for a project
+that already has `:nerves_ssh`:
+
+```sh
+mix nerves_ssh.add_user --ssh-username admin
+```
+
+This adds `:user_passwords` to your `config :nerves_ssh` without touching the
+rest of it. Nothing is changed if `:user_passwords` is already configured. The
+password is never written to a file. It is read from an environment variable
+when the firmware is built:
+
+```sh
+NERVES_SSH_PASSWORD=... mix firmware
+```
+
+Firmware that is built with the variable unset or empty has no password user,
+so it doesn't accept password logins at all. Keep in mind that passwords are a
+weaker form of authentication than keys and that the password is stored in the
+clear in the firmware. See the Authentication section below.
+
+Options:
+
+* `--ssh-username` - the name to log in with. Defaults to `username`.
+* `--ssh-password-env` - the name of the environment variable that the password
+  is read from when the firmware is built. Defaults to `NERVES_SSH_PASSWORD`.
+
 ### Starting as part of one of your supervision trees
 
 If you want to do this, make sure that you do NOT specify `:nerves_ssh` in your

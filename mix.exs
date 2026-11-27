@@ -57,7 +57,17 @@ defmodule NervesSSH.MixProject do
       {:lfe, "~> 2.0", only: [:dev, :test], compile: "make", optional: true},
       {:sshex, "~> 2.2.1", only: [:dev, :test]},
       {:credo, "~> 1.2", only: :test, runtime: false}
-    ]
+    ] ++ igniter_deps()
+  end
+
+  # Igniter requires Elixir 1.15 or later. Without it, the installer tasks
+  # only print that Igniter is needed.
+  defp igniter_deps() do
+    if Version.match?(System.version(), ">= 1.15.0") do
+      [{:igniter, "~> 0.6", optional: true, runtime: false}]
+    else
+      []
+    end
   end
 
   defp description do
@@ -66,6 +76,7 @@ defmodule NervesSSH.MixProject do
 
   defp dialyzer() do
     [
+      plt_add_apps: [:igniter, :sourceror, :rewrite, :mix],
       flags: [:missing_return, :extra_return, :unmatched_returns, :error_handling, :underspecs]
     ]
   end
